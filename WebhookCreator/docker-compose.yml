@@ -1,0 +1,9 @@
+version: '1.0'
+services:
+    testing:
+        environment:
+            - TOKEN=YOUR_DISCORD_BOT_TOKEN
+            - owner_id=DISCORDID_OF_BOTOWNER
+        restart: always
+        image: 'serpensin/discord_webhook_creator'
+        container_name: 'WebhookCreator'

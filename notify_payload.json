@@ -1,0 +1,96 @@
+{
+   "username":"Docker Hub",
+   "avatar_url":"https://cdn.bloodygang.com/docker.png",
+   "content":"",
+   "embeds":[
+      {
+         "title":"New image pushed",
+         "color":1010871,
+         "description":"",
+         "timestamp":"",
+         "url":"",
+         "author":{
+            
+         },
+         "image":{
+            
+         },
+         "thumbnail":{
+            
+         },
+         "footer":{
+            
+         },
+         "fields":[
+            {
+               "name":"——————————Repo——————————",
+               "value":"​"
+            },
+            {
+               "name":"Name",
+               "value":"dbdstats",
+               "inline":false
+            },
+            {
+               "name":"Owner",
+               "value":"Serpensin",
+               "inline":true
+            },
+            {
+               "name":"Created on",
+               "value":"<t:1668469046>",
+               "inline":true
+            },
+            {
+               "name":"Visibility",
+               "value":"Private",
+               "inline":true
+            },
+            {
+               "name":"——————————Push——————————",
+               "value":"​"
+            },
+            {
+               "name":"Pusher",
+               "value":"Serpensin",
+               "inline":true
+            },
+            {
+               "name":"Tag",
+               "value":"latest",
+               "inline":true
+            },
+            {
+               "name":"Pushed at",
+               "value":"<t:$time>",
+               "inline":true
+            }
+         ]
+      }
+   ],
+   "components":[
+      {
+         "type":1,
+         "components":[
+            {
+               "type":2,
+               "style":5,
+               "label":"Owner",
+               "url":"https://hub.docker.com/u/serpensin"
+            },
+            {
+               "type":2,
+               "style":5,
+               "label":"Pusher",
+               "url":"https://hub.docker.com/u/serpensin"
+            },
+            {
+               "type":2,
+               "style":5,
+               "label":"Repo",
+               "url":"https://hub.docker.com/repository/docker/serpensin/dbdstats/tags?page=1&ordering=last_updated&name=latest"
+            }
+         ]
+      }
+   ]
+}

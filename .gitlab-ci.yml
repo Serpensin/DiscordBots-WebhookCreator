@@ -1,3 +1,7 @@
+stages:
+   - build
+   - notify
+
 docker-build:
   image: docker:latest
   stage: build
@@ -7,10 +11,25 @@ docker-build:
     - docker login -u $DOCKER_USER -p $DOCKER_PW
     - docker buildx create --use
     - sleep 2
-    - docker buildx build --compress --no-cache --platform linux/386,linux/amd64 -t serpensin/discord_webhook_creator:latest --push ./DBDStats
+    - docker buildx build --compress --no-cache --platform linux/386,linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/s390x -t serpensin/dbdstats:latest --push ./DBDStats
+  timeout: 90m
+
+send-request:
+  image: appropriate/curl
+  stage: notify
+  dependencies:
+  - docker-build
+  variables:
+    WEBHOOK_SUCCESS: $WEBHOOK
+  script:
+    - export CURRENT_TIME=$(date +%s)
+    - PAYLOAD=$(sed "s/\$time/$CURRENT_TIME/g" notify_payload.json)
+    - 'echo "$PAYLOAD" | curl --insecure -X POST -H "Content-Type: application/json" -d @- "$WEBHOOK_SUCCESS"'
+
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-      when: never
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
     - if: $CI_PIPELINE_SOURCE == "trigger"
       when: always
+

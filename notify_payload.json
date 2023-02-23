@@ -28,7 +28,7 @@
             },
             {
                "name":"Name",
-               "value":"dbdstats",
+               "value":"discord_webhook_creator",
                "inline":false
             },
             {
@@ -88,7 +88,7 @@
                "type":2,
                "style":5,
                "label":"Repo",
-               "url":"https://hub.docker.com/repository/docker/serpensin/dbdstats/tags?page=1&ordering=last_updated&name=latest"
+               "url":"https://hub.docker.com/repository/docker/serpensin/discord_webhook_creator/tags?page=1&ordering=last_updated&name=latest"
             }
          ]
       }

@@ -13,7 +13,7 @@ You can use the bot to create webhooks for your server, or for other servers. (I
       2. Clone this repo, or download the zip file.
       3. Open a terminal inside "WebhookCreator" in the folder where you cloned the repo, or extracted the zip file.
       4. Run `pip install -r requirements.txt` to install the dependencies.
-      5. Open the file ".env" and enter your bot token and your owner id.
+      5. Open the file ".env.template" and enter your bot token and your owner id. After that, rename it to ".env".
       6. Run `python main.py` or `python3 main.py` to start the bot.
 
 #### Docker

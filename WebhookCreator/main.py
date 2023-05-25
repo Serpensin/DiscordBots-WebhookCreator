@@ -2,7 +2,17 @@
 import time
 import discord
 import os
+import sentry_sdk
 from dotenv import load_dotenv
+
+
+#Sentry
+sentry_sdk.init(
+    dsn="https://e678a2f4027f4ab6ad5d36b5be59fd52@o4504883552780288.ingest.sentry.io/4505247195725824",
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+    environment='Production',
+)
 
 
 
@@ -11,11 +21,12 @@ TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 
 
-intents = discord.Intents.default()
-
 
 class aclient(discord.AutoShardedClient):
     def __init__(self):
+
+        intents = discord.Intents.default()
+
         super().__init__(owner_id = ownerID,
                               intents = intents,
                               status = discord.Status.invisible
@@ -28,6 +39,7 @@ class aclient(discord.AutoShardedClient):
             await bot.change_presence(activity = discord.Game(name='with Webhooks'), status = discord.Status.online)
         global owner
         owner = await bot.fetch_user(ownerID)
+        print('READY')
 bot = aclient()
 tree = discord.app_commands.CommandTree(bot)
 
@@ -67,5 +79,6 @@ async def self(interaction: discord.Interaction, name: str):
     else:
         await interaction.response.send_message('You need the permission "Manage Webhooks" for this channel to use this command!', ephemeral=True)
 
-       
-bot.run(TOKEN)
+
+if __name__ == '__main__':
+   bot.run(TOKEN)

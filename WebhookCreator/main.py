@@ -7,8 +7,9 @@ from dotenv import load_dotenv
 
 
 #Sentry
+load_dotenv()
 sentry_sdk.init(
-    dsn="https://e678a2f4027f4ab6ad5d36b5be59fd52@o4504883552780288.ingest.sentry.io/4505247195725824",
+    dsn=os.getenv('SENTRY_DSN'),
     traces_sample_rate=1.0,
     profiles_sample_rate=1.0,
     environment='Production',
@@ -16,7 +17,6 @@ sentry_sdk.init(
 
 
 
-load_dotenv()
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 

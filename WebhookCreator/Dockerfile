@@ -10,6 +10,8 @@ ENV TERM xterm
 ENV PYTHONUNBUFFERED 1
 
 ARG TARGETPLATFORM
+ARG BUILD_DATE
+ARG COMMIT
 
 RUN python -m pip install --upgrade pip
 RUN pip install --upgrade setuptools
@@ -18,11 +20,8 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm/v6" ] || [ "$TARGETPLATFORM" = "linux/ar
     fi
 RUN pip install -r requirements.txt
 
-ARG BUILD_DATE
-ARG VERSION
-
 LABEL maintainer="./𝕾𝖊𝖗𝖕𝖊𝖓𝖘𝖎𝖓.𝖘𝖍#0007"
-LABEL version=$VERSION
+LABEL commit=$COMMIT
 LABEL description="Discord bot for creating Webhooks."
 LABEL release=$BUILD_DATE
 

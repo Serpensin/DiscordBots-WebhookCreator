@@ -1,5 +1,7 @@
 #Import
 import discord
+import json
+import jsonschema
 import os
 import platform
 import sentry_sdk
@@ -18,11 +20,64 @@ sentry_sdk.init(
     environment='Production',
 )
 
-
-bot_version = "1.1.0"
+app_folder_name = 'WH-Creator'
+bot_name = 'WebhookCreator'
+if not os.path.exists(app_folder_name):
+    os.makedirs(app_folder_name)
+activity_file = os.path.join(app_folder_name, 'activity.json')
+bot_version = "1.1.1"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 
+
+#Create activity.json if not exists
+class JSONValidator:
+    schema = {
+        "type" : "object",
+        "properties" : {
+            "activity_type" : {
+                "type" : "string", 
+                "enum" : ["Playing", "Streaming", "Listening", "Watching", "Competing"]
+            },
+            "activity_title" : {"type" : "string"},
+            "activity_url" : {"type" : "string"},
+            "status" : {
+                "type" : "string",
+                "enum" : ["online", "idle", "dnd", "invisible"]
+            },
+        },
+    }
+
+    default_content = {
+        "activity_type": "Playing",
+        "activity_title": "Made by Serpensin: https://gitlab.bloodygang.com/Serpensin",
+        "activity_url": "",
+        "status": "online"
+    }
+
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def validate_and_fix_json(self):
+        if os.path.exists(self.file_path):
+            with open(self.file_path, 'r') as file:
+                try:
+                    data = json.load(file)
+                    jsonschema.validate(instance=data, schema=self.schema)  # validate the data
+                except jsonschema.exceptions.ValidationError as ve:
+                    print(f'ValidationError: {ve}')
+                    self.write_default_content()
+                except json.decoder.JSONDecodeError as jde:
+                    print(f'JSONDecodeError: {jde}')
+                    self.write_default_content()
+        else:
+            self.write_default_content()
+
+    def write_default_content(self):
+        with open(self.file_path, 'w') as file:
+            json.dump(self.default_content, file, indent=4)
+validator = JSONValidator(activity_file)
+validator.validate_and_fix_json()
 
 
 class aclient(discord.AutoShardedClient):

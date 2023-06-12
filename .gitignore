@@ -364,3 +364,4 @@ FodyWeavers.xsd
 /WebhookCreator/env
 /WebhookCreator/docker_build.bat
 /WebhookCreator/.env
+/WebhookCreator/WH-Creator/activity.json

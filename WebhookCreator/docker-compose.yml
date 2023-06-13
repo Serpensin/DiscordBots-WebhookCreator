@@ -3,7 +3,8 @@ services:
     testing:
         environment:
             - TOKEN=YOUR_DISCORD_BOT_TOKEN
-            - owner_id=DISCORDID_OF_BOTOWNER
+            - OWNER_ID=DISCORDID_OF_BOTOWNER
+            - SUPPORT_SERVER=DISCORD-ID-SUPPORTSERVER
         restart: always
         image: 'serpensin/discord_webhook_creator'
         container_name: 'WebhookCreator'

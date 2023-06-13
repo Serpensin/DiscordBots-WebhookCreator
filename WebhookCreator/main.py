@@ -25,10 +25,10 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
     os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.1.1"
+bot_version = "1.2.0"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
-
+support_id = os.getenv('SUPPORT_SERVER')
 
 #Create activity.json if not exists
 class JSONValidator:
@@ -103,6 +103,11 @@ bot = aclient()
 tree = discord.app_commands.CommandTree(bot)
 
 
+# Check if all required variables are set
+owner_available = bool(ownerID)
+support_available = bool(support_id)
+
+
 ##Events
 #Error
 @tree.error
@@ -110,15 +115,50 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
     await interaction.response.send_message(error, ephemeral = True)
 
  
+#Functions
+class Functions():
+    async def create_support_invite(interaction):
+        try:
+            guild = bot.get_guild(int(support_id))
+        except ValueError:
+            return "Could not find support guild."
+        if guild is None:
+            return "Could not find support guild."
+        if not guild.text_channels:
+            return "Support guild has no text channels."
+        try:
+            member = await guild.fetch_member(interaction.user.id)
+        except discord.NotFound:
+            member = None
+        if member is not None:
+            return "You are already in the support guild."
+        channels: discord.TextChannel = guild.text_channels
+        for channel in channels:
+            try:
+                invite: discord.Invite = await channel.create_invite(
+                    reason=f"Created invite for {interaction.user.name} from server {interaction.guild.name} ({interaction.guild_id})",
+                    max_age=60,
+                    max_uses=1,
+                    unique=True
+                )
+                return invite.url
+            except discord.Forbidden:
+                continue
+            except discord.HTTPException:
+                continue
+        return "Could not create invite. There is either no text-channel, or I don't have the rights to create an invite."
+
+
 ##Owner Commands----------------------------------------
 #Shutdown
-@tree.command(name = 'shutdown', description = 'Safely shut down the bot.')
-async def self(interaction: discord.Interaction):
-    if interaction.user.id == int(ownerID):
-        await interaction.response.send_message('Engine powering down...', ephemeral = True)
-        await bot.close()
-    else:
-        await interaction.response.send_message('Only the BotOwner can use this command!', ephemeral = True)
+if owner_available:
+    @tree.command(name = 'shutdown', description = 'Safely shut down the bot.')
+    async def self(interaction: discord.Interaction):
+        if interaction.user.id == int(ownerID):
+            await interaction.response.send_message('Engine powering down...', ephemeral = True)
+            await bot.close()
+        else:
+            await interaction.response.send_message('Only the BotOwner can use this command!', ephemeral = True)
 ##Bot Commands----------------------------------------
 #Bot Information
 @tree.command(name = 'botinfo', description = 'Get information about the bot.')
@@ -157,6 +197,16 @@ async def self(interaction: discord.Interaction):
     embed.add_field(name="\u200b", value="\u200b", inline=True)  
 
     await interaction.response.send_message(embed=embed)
+#Support Invite
+if support_available:
+    @tree.command(name = 'support', description = 'Get invite to our support server.')
+    @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
+    async def self(interaction: discord.Interaction):
+        if str(interaction.guild.id) != support_id:
+            await interaction.response.defer(ephemeral = True)
+            await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
+        else:
+            await interaction.response.send_message('You are already in our support server!', ephemeral = True)
 #Ping
 @tree.command(name = 'ping', description = 'Test, if the bot is responding.')
 async def self(interaction: discord.Interaction):

@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY *.py .
 COPY requirements.txt .
-COPY activity.json .
 
 ENV TERM xterm
 ENV PYTHONUNBUFFERED 1

@@ -8,9 +8,12 @@ docker-build:
     - docker:dind
   script:
     - docker login -u serpensin -p $DOCKER_PW
-    - docker buildx create --use
+    - docker buildx create
     - sleep 2
     - docker buildx build --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") --build-arg COMMIT=${CI_COMMIT_SHA} --compress --no-cache --platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/s390x -t serpensin/discord_webhook_creator:latest --push ./WebhookCreator
+  after_script:
+    - docker buildx rm
+    - docker volume prune -f
   timeout: 90m
 
 workflow:

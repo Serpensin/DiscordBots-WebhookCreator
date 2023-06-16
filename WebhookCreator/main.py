@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 
 #Sentry
+discord.VoiceClient.warn_nacl = False
 load_dotenv()
 sentry_sdk.init(
     dsn=os.getenv('SENTRY_DSN'),

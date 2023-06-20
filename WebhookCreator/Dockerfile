@@ -18,7 +18,6 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm/v6" ] || [ "$TARGETPLATFORM" = "linux/ar
         apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev; \
     fi
 RUN pip install -r requirements.txt
-RUN apk del gcc musl-dev python3-dev
 
 LABEL maintainer="the_devil_of_the_rhine (863687441809801246)"
 LABEL commit=$COMMIT

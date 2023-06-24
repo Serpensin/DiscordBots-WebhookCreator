@@ -19,11 +19,11 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm/v6" ] || [ "$TARGETPLATFORM" = "linux/ar
     fi
 RUN pip install -r requirements.txt
 
-LABEL maintainer="the_devil_of_the_rhine (863687441809801246)"
+LABEL maintainer="Discord: the_devil_of_the_rhine (863687441809801246)"
 LABEL commit=$COMMIT
 LABEL description="Discord bot for creating Webhooks."
 LABEL release=$BUILD_DATE
-LABEL version="1.2.0"
+LABEL version="1.2.1"
 
 CMD ["python3", "main.py"]
 

@@ -29,7 +29,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
 	os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.2.0"
+bot_version = "1.2.1"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -93,9 +93,14 @@ class aclient(discord.AutoShardedClient):
 
 		super().__init__(owner_id = ownerID,
 							  intents = intents,
-							  status = discord.Status.invisible
+							  status = discord.Status.invisible,
+							  auto_reconnect = True
 						)
 		self.synced = False
+
+	async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
+		await interaction.response.send_message(error, ephemeral = True)
+
 	async def on_ready(self):
 		if not self.synced:
 			await tree.sync()
@@ -113,21 +118,14 @@ class aclient(discord.AutoShardedClient):
 		print('READY')
 bot = aclient()
 tree = discord.app_commands.CommandTree(bot)
+tree.on_error = bot.on_app_command_error
 
 
 # Check if all required variables are set
 support_available = bool(support_id)
 
-
-
-
-##Events
-#Error
-@tree.error
-async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
-	await interaction.response.send_message(error, ephemeral = True)
-
  
+
 #Functions
 class Functions():
 	async def create_support_invite(interaction):

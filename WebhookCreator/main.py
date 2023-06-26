@@ -29,7 +29,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
 	os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.2.1"
+bot_version = "1.2.2"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -98,7 +98,7 @@ class aclient(discord.AutoShardedClient):
 						)
 		self.synced = False
 
-	async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
+	async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
 		await interaction.response.send_message(error, ephemeral = True)
 
 	async def on_ready(self):
@@ -244,6 +244,7 @@ async def self(interaction: discord.Interaction):
 ##Main Commands----------------------------------------
 #Create Webhook
 @tree.command(name = 'create_webhook', description = 'Create a webhook.')
+@discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.channel.id))
 @discord.app_commands.describe(name='Name of the webhook.')
 async def self(interaction: discord.Interaction, name: str):
 	if interaction.channel.permissions_for(interaction.user).manage_webhooks:

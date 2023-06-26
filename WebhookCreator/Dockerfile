@@ -23,7 +23,7 @@ LABEL maintainer="Discord: the_devil_of_the_rhine (863687441809801246)"
 LABEL commit=$COMMIT
 LABEL description="Discord bot for creating Webhooks."
 LABEL release=$BUILD_DATE
-LABEL version="1.2.1"
+LABEL version="1.2.2"
 
 CMD ["python3", "main.py"]
 

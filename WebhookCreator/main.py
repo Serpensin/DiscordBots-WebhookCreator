@@ -109,7 +109,7 @@ class aclient(discord.AutoShardedClient):
             await bot.change_presence(activity = discord.Game(name='with Webhooks'), status = discord.Status.online)
         
         if topgg_token:
-            bot.loop.create_task(Functions.update_topgg())
+            bot.loop.create_task(Functions.topgg())
         if heartbeat_url:
             bot.loop.create_task(Functions.heartbeat())
 

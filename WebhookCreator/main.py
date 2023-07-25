@@ -29,7 +29,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
 	os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.2.2"
+bot_version = "1.2.3"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')

@@ -1,4 +1,4 @@
-FROM python:3.9.17-alpine
+FROM python:3.9.18-alpine
 
 WORKDIR /app
 
@@ -28,6 +28,6 @@ LABEL maintainer="Discord: the_devil_of_the_rhine (863687441809801246)" \
       commit=$COMMIT \
       description="Discord bot for creating Webhooks." \
       release=$BUILD_DATE \
-      version="1.3.0"
+      version="1.4.0"
 
 CMD ["python3", "main.py"]

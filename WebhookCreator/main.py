@@ -1,4 +1,5 @@
 #Import
+print('Loading...')
 import aiohttp
 import asyncio
 import discord
@@ -30,7 +31,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
     os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.4.1"
+bot_version = "1.4.2"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -49,7 +50,7 @@ class JSONValidator:
         "type" : "object",
         "properties" : {
             "activity_type" : {
-                "type" : "string", 
+                "type" : "string",
                 "enum" : ["Playing", "Streaming", "Listening", "Watching", "Competing"]
             },
             "activity_title" : {"type" : "string"},
@@ -232,13 +233,13 @@ class aclient(discord.AutoShardedClient):
 
         await bot.change_presence(activity = self.Presence.get_activity(), status = self.Presence.get_status())
         pt(r'''
- __      __          __       __                      __      ____                          __                   
-/\ \  __/\ \        /\ \     /\ \                    /\ \    /\  _`\                       /\ \__                
-\ \ \/\ \ \ \     __\ \ \____\ \ \___     ___     ___\ \ \/'\\ \ \/\_\  _ __    __     __  \ \ ,_\   ___   _ __  
+ __      __          __       __                      __      ____                          __
+/\ \  __/\ \        /\ \     /\ \                    /\ \    /\  _`\                       /\ \__
+\ \ \/\ \ \ \     __\ \ \____\ \ \___     ___     ___\ \ \/'\\ \ \/\_\  _ __    __     __  \ \ ,_\   ___   _ __
  \ \ \ \ \ \ \  /'__`\ \ '__`\\ \  _ `\  / __`\  / __`\ \ , < \ \ \/_/_/\`'__\/'__`\ /'__`\ \ \ \/  / __`\/\`'__\
-  \ \ \_/ \_\ \/\  __/\ \ \L\ \\ \ \ \ \/\ \L\ \/\ \L\ \ \ \\`\\ \ \L\ \ \ \//\  __//\ \L\.\_\ \ \_/\ \L\ \ \ \/ 
-   \ `\___x___/\ \____\\ \_,__/ \ \_\ \_\ \____/\ \____/\ \_\ \_\ \____/\ \_\\ \____\ \__/.\_\\ \__\ \____/\ \_\ 
-    '\/__//__/  \/____/ \/___/   \/_/\/_/\/___/  \/___/  \/_/\/_/\/___/  \/_/ \/____/\/__/\/_/ \/__/\/___/  \/_/ 
+  \ \ \_/ \_\ \/\  __/\ \ \L\ \\ \ \ \ \/\ \L\ \/\ \L\ \ \ \\`\\ \ \L\ \ \ \//\  __//\ \L\.\_\ \ \_/\ \L\ \ \ \/
+   \ `\___x___/\ \____\\ \_,__/ \ \_\ \_\ \____/\ \____/\ \_\ \_\ \____/\ \_\\ \____\ \__/.\_\\ \__\ \____/\ \_\
+    '\/__//__/  \/____/ \/___/   \/_/\/_/\/___/  \/___/  \/_/\/_/\/___/  \/_/ \/____/\/__/\/_/ \/__/\/___/  \/_/
         ''')
         start_time = datetime.now()
         pt('READY')
@@ -250,7 +251,7 @@ tree.on_error = bot.on_app_command_error
 # Check if all required variables are set
 support_available = bool(support_id)
 
- 
+
 
 #Functions
 class Functions():
@@ -404,7 +405,7 @@ class Owner():
         await asyncio.gather(*tasks, return_exceptions=True)
 
         await bot.close()
-        
+
 
 ##Bot Commands----------------------------------------
 #Bot Information
@@ -441,7 +442,7 @@ async def self(interaction: discord.Interaction):
 
     embed.add_field(name="Repo", value=f"[GitLab](https://gitlab.bloodygang.com/Serpensin/Discord-Webhook-Creator)", inline=True)
     embed.add_field(name="Invite", value=f"[Invite me](https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=536870912&scope=bot%20applications.commands)", inline=True)
-    embed.add_field(name="\u200b", value="\u200b", inline=True)  
+    embed.add_field(name="\u200b", value="\u200b", inline=True)
 
     await interaction.response.send_message(embed=embed)
 #Support Invite
@@ -465,13 +466,13 @@ async def self(interaction: discord.Interaction):
 #Create Webhook
 @tree.command(name = 'create_webhook', description = 'Create a webhook.')
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.channel.id))
-@discord.app_commands.describe(name='Name of the webhook.')
-async def self(interaction: discord.Interaction, name: str):
-    if interaction.channel.permissions_for(interaction.user).manage_webhooks:
+@discord.app_commands.describe(name='Name of the webhook.', channel='Channel the webhook should be created in.')
+async def self(interaction: discord.Interaction, name: str, channel: discord.TextChannel):
+    if channel.permissions_for(interaction.user).manage_webhooks:
         webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
-        await interaction.response.send_message(webhook.url, ephemeral=True)
+        await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
     else:
-        await interaction.response.send_message('You need the permission "Manage Webhooks" for this channel to use this command!', ephemeral=True)
+        await interaction.response.send_message(f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
 
 
 

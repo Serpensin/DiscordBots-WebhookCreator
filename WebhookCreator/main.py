@@ -31,7 +31,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
     os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.4.2"
+bot_version = "1.4.3"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -230,8 +230,9 @@ class aclient(discord.AutoShardedClient):
             bot.loop.create_task(Functions.topgg())
         if heartbeat_url:
             bot.loop.create_task(Functions.heartbeat())
+        bot.loop.create_task(Functions.webhook_count_activity())
 
-        await bot.change_presence(activity = self.Presence.get_activity(), status = self.Presence.get_status())
+        await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
         pt(r'''
  __      __          __       __                      __      ____                          __
 /\ \  __/\ \        /\ \     /\ \                    /\ \    /\  _`\                       /\ \__
@@ -311,6 +312,31 @@ class Functions():
                         print(f'Heartbeat failed with status {r.status}')
             try:
                 await asyncio.sleep(20)
+            except asyncio.CancelledError:
+                pass
+
+
+    async def webhook_count_activity():
+        while not shutdown:
+            webhook_count = 0
+            for guild in bot.guilds:
+                try:
+                    webhooks = await guild.webhooks()
+                    for webhook in webhooks:
+                        if webhook.user == bot.user:
+                            webhook_count += 1
+                except discord.Forbidden:
+                    continue
+            with open(activity_file, 'r', encoding='utf8') as f:
+                data = json.load(f)
+            data['activity_type'] = 'Watching'
+            data['activity_title'] = f"{webhook_count} webhooks in {len(bot.guilds)} guilds."
+            data['activity_url'] = ''
+            with open(activity_file, 'w', encoding='utf8') as f:
+                json.dump(data, f, indent=2)
+            await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
+            try:
+                await asyncio.sleep(60*5)
             except asyncio.CancelledError:
                 pass
 
@@ -473,7 +499,6 @@ async def self(interaction: discord.Interaction, name: str, channel: discord.Tex
         await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
     else:
         await interaction.response.send_message(f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
-
 
 
 

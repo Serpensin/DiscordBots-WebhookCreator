@@ -31,7 +31,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
     os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.4.3"
+bot_version = "1.4.4"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -326,6 +326,8 @@ class Functions():
                         if webhook.user == bot.user:
                             webhook_count += 1
                 except discord.Forbidden:
+                    continue
+                except discord.DiscordServerError:
                     continue
             with open(activity_file, 'r', encoding='utf8') as f:
                 data = json.load(f)

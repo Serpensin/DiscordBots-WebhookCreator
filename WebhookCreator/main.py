@@ -11,6 +11,7 @@ import sentry_sdk
 import sys
 import time
 import traceback
+from aiohttp import web
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -229,7 +230,7 @@ class aclient(discord.AutoShardedClient):
         if topgg_token:
             bot.loop.create_task(Functions.topgg())
         if heartbeat_url:
-            bot.loop.create_task(Functions.heartbeat())
+            bot.loop.create_task(Functions.health_server())
         bot.loop.create_task(Functions.webhook_count_activity())
 
         await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
@@ -256,6 +257,21 @@ support_available = bool(support_id)
 
 #Functions
 class Functions():
+    async def health_server():
+        async def __health_check(request):
+            return web.Response(text="Healthy")
+
+        app = web.Application()
+        app.router.add_get('/health', __health_check)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', 5000)
+        try:
+            await site.start()
+        except OSError as e:
+            pt(f'Error while starting health server: {e}')
+
+
     async def create_support_invite(interaction):
         try:
             guild = bot.get_guild(int(support_id))
@@ -300,18 +316,6 @@ class Functions():
                         print(f'Failed to update top.gg: {resp.status} {resp.reason}')
             try:
                 await asyncio.sleep(60*30)
-            except asyncio.CancelledError:
-                pass
-
-
-    async def heartbeat():
-        while not shutdown:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(heartbeat_url) as r:
-                    if r.status != 200:
-                        print(f'Heartbeat failed with status {r.status}')
-            try:
-                await asyncio.sleep(20)
             except asyncio.CancelledError:
                 pass
 

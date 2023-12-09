@@ -32,7 +32,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
     os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.4.4"
+bot_version = "1.5.0"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -107,6 +107,7 @@ class aclient(discord.AutoShardedClient):
                               auto_reconnect = True
                         )
         self.synced = False
+        self.initialized = False
 
 
     class Presence():
@@ -213,6 +214,9 @@ class aclient(discord.AutoShardedClient):
 
 
     async def on_ready(self):
+        if self.initialized:
+            await bot.change_presence(activity = self.Presence.get_activity(), status = self.Presence.get_status())
+            return
         if not self.synced:
             pt('Syncing commands...')
             await tree.sync()
@@ -245,6 +249,7 @@ class aclient(discord.AutoShardedClient):
         ''')
         start_time = datetime.now()
         pt('READY')
+        self.initialized = True
 bot = aclient()
 tree = discord.app_commands.CommandTree(bot)
 tree.on_error = bot.on_app_command_error

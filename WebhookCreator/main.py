@@ -14,6 +14,7 @@ import traceback
 from aiohttp import web
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from urllib.parse import urlparse
 
 
 
@@ -32,7 +33,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
     os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.5.0"
+bot_version = "1.5.1"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -359,16 +360,25 @@ class Owner():
             await message.channel.send('```'
                                        'activity [playing/streaming/listening/watching/competing] [title] (url) - Set the activity of the bot\n'
                                        '```')
+        def isURL(zeichenkette):
+            try:
+                ergebnis = urlparse(zeichenkette)
+                return all([ergebnis.scheme, ergebnis.netloc])
+            except:
+                return False
+
+        def remove_and_save(liste):
+            if liste and isURL(liste[-1]):
+                return liste.pop()
+            else:
+                return None
 
         if args == []:
             await __wrong_selection()
             return
         action = args[0].lower()
-        title = args[1]
-        try:
-            url = args[2]
-        except IndexError:
-            url = ''
+        url = remove_and_save(args[1:])
+        title = ' '.join(args[1:])
         print(title)
         print(url)
         with open(activity_file, 'r', encoding='utf8') as f:

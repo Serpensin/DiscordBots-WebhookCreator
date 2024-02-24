@@ -327,7 +327,7 @@ class Functions():
 
 
     async def webhook_count_activity():
-        while not shutdown:
+        async def function():
             webhook_count = 0
             for guild in bot.guilds:
                 try:
@@ -347,6 +347,9 @@ class Functions():
             with open(activity_file, 'w', encoding='utf8') as f:
                 json.dump(data, f, indent=2)
             await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
+
+        while not shutdown:
+            await function()
             try:
                 await asyncio.sleep(60*5)
             except asyncio.CancelledError:

@@ -347,6 +347,7 @@ class Functions():
             with open(activity_file, 'w', encoding='utf8') as f:
                 json.dump(data, f, indent=2)
             await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
+            print(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
 
         while not shutdown:
             await function()
@@ -462,6 +463,8 @@ class Owner():
 @tree.command(name = 'botinfo', description = 'Get information about the bot.')
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
 async def self(interaction: discord.Interaction):
+    await interaction.response.defer()
+
     member_count = sum(guild.member_count for guild in bot.guilds)
 
     embed = discord.Embed(
@@ -494,7 +497,7 @@ async def self(interaction: discord.Interaction):
     embed.add_field(name="Invite", value=f"[Invite me](https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=536870912&scope=bot%20applications.commands)", inline=True)
     embed.add_field(name="\u200b", value="\u200b", inline=True)
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.edit_original_response(embed=embed)
 #Support Invite
 if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')

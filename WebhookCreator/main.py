@@ -33,7 +33,7 @@ bot_name = 'WebhookCreator'
 if not os.path.exists(app_folder_name):
     os.makedirs(app_folder_name)
 activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.5.3"
+bot_version = "1.5.4"
 TOKEN = os.getenv('TOKEN')
 ownerID = os.getenv('OWNER_ID')
 support_id = os.getenv('SUPPORT_SERVER')
@@ -347,7 +347,7 @@ class Functions():
             with open(activity_file, 'w', encoding='utf8') as f:
                 json.dump(data, f, indent=2)
             await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
-            print(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
+            pt(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
 
         while not shutdown:
             await function()

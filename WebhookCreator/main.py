@@ -2,9 +2,12 @@
 print('Loading...')
 import aiohttp
 import asyncio
+import datetime
 import discord
 import json
 import jsonschema
+import logging
+import logging.handlers
 import os
 import platform
 import sentry_sdk
@@ -12,9 +15,9 @@ import sys
 import time
 import traceback
 from aiohttp import web
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from urllib.parse import urlparse
+from zipfile import ZIP_DEFLATED, ZipFile
 
 
 
@@ -28,17 +31,40 @@ sentry_sdk.init(
     environment='Production',
 )
 
-app_folder_name = 'WH-Creator'
-bot_name = 'WebhookCreator'
-if not os.path.exists(app_folder_name):
-    os.makedirs(app_folder_name)
-activity_file = os.path.join(app_folder_name, 'activity.json')
-bot_version = "1.6.0"
+APP_FOLDER_NAME = 'WH-Creator'
+BOT_NAME = 'WebhookCreator'
+if not os.path.exists(APP_FOLDER_NAME):
+    os.makedirs(APP_FOLDER_NAME)
+activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
+bot_version = "1.7.0"
 TOKEN = os.getenv('TOKEN')
-ownerID = os.getenv('OWNER_ID')
-support_id = os.getenv('SUPPORT_SERVER')
-topgg_token = os.getenv('TOPGG_TOKEN')
-heartbeat_url = os.getenv('HEARTBEAT_URL')
+OWNERID = os.getenv('OWNER_ID')
+SUPPORTID = os.getenv('SUPPORT_SERVER')
+TOPGG_TOKEN = os.getenv('TOPGG_TOKEN')
+
+#Set-ip logging
+os.makedirs(f'{APP_FOLDER_NAME}//Logs', exist_ok=True)
+os.makedirs(f'{APP_FOLDER_NAME}//Buffer', exist_ok=True)
+LOG_FOLDER = f'{APP_FOLDER_NAME}//Logs//'
+BUFFER_FOLDER = f'{APP_FOLDER_NAME}//Buffer//'
+logger = logging.getLogger('discord')
+manlogger = logging.getLogger('Program')
+logger.setLevel(logging.INFO)
+manlogger.setLevel(logging.INFO)
+logging.getLogger('discord.http').setLevel(logging.INFO)
+handler = logging.handlers.TimedRotatingFileHandler(
+    filename = f'{LOG_FOLDER}{BOT_NAME}.log',
+    encoding = 'utf-8',
+    when = 'midnight',
+    backupCount = 27
+    )
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+manlogger.addHandler(handler)
+manlogger.info('Engine powering up...')
+
 
 # print() will only print if run in debugger. pt() will always print.
 pt = print
@@ -102,7 +128,7 @@ class aclient(discord.AutoShardedClient):
 
         intents = discord.Intents.default()
 
-        super().__init__(owner_id = ownerID,
+        super().__init__(owner_id = OWNERID,
                               intents = intents,
                               status = discord.Status.invisible,
                               auto_reconnect = True
@@ -144,40 +170,38 @@ class aclient(discord.AutoShardedClient):
             elif status == 'invisible':
                 return discord.Status.invisible
 
-
     async def on_message(self, message):
         async def __wrong_selection():
             await message.channel.send('```'
                                        'Commands:\n'
                                        'help - Shows this message\n'
                                        'activity - Set the activity of the bot\n'
+                                       'log - Get the log\n'
                                        'status - Set the status of the bot\n'
                                        'shutdown - Shutdown the bot\n'
                                        '```')
 
-        if message.guild is None and message.author.id == int(ownerID):
+        if message.guild is None and message.author.id == int(OWNERID):
             args = message.content.split(' ')
             print(args)
             command, *args = args
             if command == 'help':
                 await __wrong_selection()
                 return
-
             elif command == 'activity':
                 await Owner.activity(message, args)
                 return
-
+            elif command == 'log':
+                await Owner.log(message, args)
+                return
             elif command == 'status':
                 await Owner.status(message, args)
                 return
-
             elif command == 'shutdown':
                 await Owner.shutdown(message)
                 return
-
             else:
                 await __wrong_selection()
-
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
         options = interaction.data.get("options")
@@ -186,7 +210,7 @@ class aclient(discord.AutoShardedClient):
             for option in options:
                 option_values += f"{option['name']}: {option['value']}"
         if isinstance(error, discord.app_commands.CommandOnCooldown):
-            await interaction.response.send_message(f'This command is on cooldown.\nTime left: `{str(timedelta(seconds=int(error.retry_after)))}`', ephemeral=True)
+            await interaction.response.send_message(f'This command is on cooldown.\nTime left: `{str(datetime.timedelta(seconds=int(error.retry_after)))}`', ephemeral=True)
             return
         if isinstance(error, discord.app_commands.MissingPermissions):
             await interaction.response.send_message(f'You are missing the following permissions: `{", ".join(error.missing_permissions)}`', ephemeral=True)
@@ -213,7 +237,6 @@ class aclient(discord.AutoShardedClient):
             finally:
                 traceback.print_exception(type(error), error, error.__traceback__)
 
-
     async def on_ready(self):
         if self.initialized:
             await bot.change_presence(activity = self.Presence.get_activity(), status = self.Presence.get_status())
@@ -226,16 +249,15 @@ class aclient(discord.AutoShardedClient):
         global owner, start_time, shutdown
         shutdown = False
         try:
-            owner = await bot.fetch_user(ownerID)
+            owner = await bot.fetch_user(OWNERID)
             print('Owner found.')
         except:
             print('Owner not found.')
 
         #Start background tasks
-        if topgg_token:
+        if TOPGG_TOKEN:
             bot.loop.create_task(Functions.topgg())
-        if heartbeat_url:
-            bot.loop.create_task(Functions.health_server())
+        bot.loop.create_task(Functions.health_server())
         bot.loop.create_task(Functions.webhook_count_activity())
 
         await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
@@ -248,7 +270,7 @@ class aclient(discord.AutoShardedClient):
    \ `\___x___/\ \____\\ \_,__/ \ \_\ \_\ \____/\ \____/\ \_\ \_\ \____/\ \_\\ \____\ \__/.\_\\ \__\ \____/\ \_\
     '\/__//__/  \/____/ \/___/   \/_/\/_/\/___/  \/___/  \/_/\/_/\/___/  \/_/ \/____/\/__/\/_/ \/__/\/___/  \/_/
         ''')
-        start_time = datetime.now()
+        start_time = datetime.datetime.now(datetime.UTC)
         pt('READY')
         self.initialized = True
 bot = aclient()
@@ -257,7 +279,7 @@ tree.on_error = bot.on_app_command_error
 
 
 # Check if all required variables are set
-support_available = bool(support_id)
+support_available = bool(SUPPORTID)
 
 
 
@@ -277,10 +299,9 @@ class Functions():
         except OSError as e:
             pt(f'Error while starting health server: {e}')
 
-
     async def create_support_invite(interaction):
         try:
-            guild = bot.get_guild(int(support_id))
+            guild = bot.get_guild(int(SUPPORTID))
         except ValueError:
             return "Could not find support guild."
         if guild is None:
@@ -309,10 +330,9 @@ class Functions():
                 continue
         return "Could not create invite. There is either no text-channel, or I don't have the rights to create an invite."
 
-
     async def topgg():
         headers = {
-            'Authorization': topgg_token,
+            'Authorization': TOPGG_TOKEN,
             'Content-Type': 'application/json'
         }
         while not shutdown:
@@ -325,7 +345,6 @@ class Functions():
             except asyncio.CancelledError:
                 pass
 
-
     async def webhook_count_activity():
         async def function():
             webhook_count = 0
@@ -335,9 +354,7 @@ class Functions():
                     for webhook in webhooks:
                         if webhook.user == bot.user:
                             webhook_count += 1
-                except discord.Forbidden:
-                    continue
-                except discord.DiscordServerError:
+                except (discord.Forbidden, discord.DiscordServerError):
                     continue
             with open(activity_file, 'r', encoding='utf8') as f:
                 data = json.load(f)
@@ -415,6 +432,63 @@ class Owner():
         await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
         await message.channel.send(f'Activity set to {action} {title}{" " + url if url else ""}.')
 
+    async def log(message, args):
+        async def __wrong_selection():
+            await message.channel.send('```'
+                                       'log [current/folder/lines] (Replace lines with a positive number, if you only want lines.) - Get the log\n'
+                                       '```')
+        if args == []:
+            await __wrong_selection()
+            return
+        if args[0] == 'current':
+            try:
+                await message.channel.send(file=discord.File(f'{LOG_FOLDER}{BOT_NAME}.log'))
+            except discord.HTTPException as err:
+                if err.status == 413:
+                    with ZipFile(f'{BUFFER_FOLDER}Logs.zip', mode='w', compression=ZIP_DEFLATED, compresslevel=9, allowZip64=True) as f:
+                        f.write(f'{LOG_FOLDER}{BOT_NAME}.log')
+                    try:
+                        await message.channel.send(file=discord.File(f'{BUFFER_FOLDER}Logs.zip'))
+                    except discord.HTTPException as err:
+                        if err.status == 413:
+                            await message.channel.send("The log is too big to be sent directly.\nYou have to look at the log in your server (VPS).")
+                    os.remove(f'{BUFFER_FOLDER}Logs.zip')
+                    return
+        elif args[0] == 'folder':
+            if os.path.exists(f'{BUFFER_FOLDER}Logs.zip'):
+                os.remove(f'{BUFFER_FOLDER}Logs.zip')
+            with ZipFile(f'{BUFFER_FOLDER}Logs.zip', mode='w', compression=ZIP_DEFLATED, compresslevel=9, allowZip64=True) as f:
+                for file in os.listdir(LOG_FOLDER):
+                    if file.endswith(".zip"):
+                        continue
+                    f.write(f'{LOG_FOLDER}{file}')
+            try:
+                await message.channel.send(file=discord.File(f'{BUFFER_FOLDER}Logs.zip'))
+            except discord.HTTPException as err:
+                if err.status == 413:
+                    await message.channel.send("The folder is too big to be sent directly.\nPlease get the current file or the last X lines.")
+            os.remove(f'{BUFFER_FOLDER}Logs.zip')
+            return
+        else:
+            try:
+                if int(args[0]) < 1:
+                    await __wrong_selection()
+                    return
+                else:
+                    lines = int(args[0])
+            except ValueError:
+                await __wrong_selection()
+                return
+            with open(f'{LOG_FOLDER}{BOT_NAME}.log', 'r', encoding='utf8') as f:
+                with open(f'{BUFFER_FOLDER}log-lines.txt', 'w', encoding='utf8') as f2:
+                    count = 0
+                    for line in (f.readlines()[-lines:]):
+                        f2.write(line)
+                        count += 1
+            await message.channel.send(content=f'Here are the last {count} lines of the current logfile:', file=discord.File(f'{BUFFER_FOLDER}log-lines.txt'))
+            if os.path.exists(f'{BUFFER_FOLDER}log-lines.txt'):
+                os.remove(f'{BUFFER_FOLDER}log-lines.txt')
+            return
 
     async def status(message, args):
         async def __wrong_selection():
@@ -444,9 +518,9 @@ class Owner():
         await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
         await message.channel.send(f'Status set to {action}.')
 
-
     async def shutdown(message):
         global shutdown
+        manlogger.info('Engine powering down...')
         await message.channel.send('Engine powering down...')
         await bot.change_presence(status=discord.Status.invisible)
         shutdown = True
@@ -475,9 +549,9 @@ async def self(interaction: discord.Interaction):
 
     embed.add_field(name="Created at", value=bot.user.created_at.strftime("%d.%m.%Y, %H:%M:%S"), inline=True)
     embed.add_field(name="Bot-Version", value=bot_version, inline=True)
-    embed.add_field(name="Uptime", value=str(timedelta(seconds=int((datetime.now() - start_time).total_seconds()))), inline=True)
+    embed.add_field(name="Uptime", value=str(datetime.timedelta(seconds=int((datetime.datetime.now(datetime.UTC) - start_time).total_seconds()))), inline=True)
 
-    embed.add_field(name="Bot-Owner", value=f"<@!{ownerID}>", inline=True)
+    embed.add_field(name="Bot-Owner", value=f"<@!{OWNERID}>", inline=True)
     embed.add_field(name="\u200b", value="\u200b", inline=True)
     embed.add_field(name="\u200b", value="\u200b", inline=True)
 
@@ -503,7 +577,7 @@ if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')
     @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
     async def self(interaction: discord.Interaction):
-        if str(interaction.guild.id) != support_id:
+        if str(interaction.guild.id) != SUPPORTID:
             await interaction.response.defer(ephemeral = True)
             await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
         else:

@@ -8,3 +8,10 @@ services:
         restart: always
         image: 'serpensin/discord_webhook_creator'
         container_name: 'WebhookCreator'
+        ports:
+            - '5000:5000'
+        volumes:
+            - data:/app/WH-Creator
+
+volumes:
+    data:

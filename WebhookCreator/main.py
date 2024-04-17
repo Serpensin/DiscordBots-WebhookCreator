@@ -11,6 +11,7 @@ import logging.handlers
 import os
 import platform
 import sentry_sdk
+import signal
 import sys
 import time
 import traceback
@@ -36,7 +37,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
-bot_version = "1.7.0"
+bot_version = "1.7.1"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -276,6 +277,17 @@ class aclient(discord.AutoShardedClient):
 bot = aclient()
 tree = discord.app_commands.CommandTree(bot)
 tree.on_error = bot.on_app_command_error
+
+
+class SignalHandler:
+    def __init__(self):
+        signal.signal(signal.SIGINT, self._shutdown)
+        signal.signal(signal.SIGTERM, self._shutdown)
+
+    def _shutdown(self, signum, frame):
+        manlogger.info('Received signal to shutdown...')
+        pt('Received signal to shutdown...')
+        bot.loop.create_task(Owner.shutdown(owner))
 
 
 # Check if all required variables are set
@@ -521,7 +533,10 @@ class Owner():
     async def shutdown(message):
         global shutdown
         manlogger.info('Engine powering down...')
-        await message.channel.send('Engine powering down...')
+        try:
+            await message.channel.send('Engine powering down...')
+        except:
+            await owner.send('Engine powering down...')
         await bot.change_presence(status=discord.Status.invisible)
         shutdown = True
 
@@ -609,6 +624,7 @@ if __name__ == '__main__':
         sys.exit('Missing token. Please check your .env file.')
     else:
         try:
+            SignalHandler()
             bot.run(TOKEN, log_handler=None)
         except discord.errors.LoginFailure:
             sys.exit('Invalid token. Please check your .env file.')

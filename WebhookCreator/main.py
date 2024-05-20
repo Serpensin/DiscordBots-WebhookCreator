@@ -366,7 +366,7 @@ class Functions():
                     for webhook in webhooks:
                         if webhook.user == bot.user:
                             webhook_count += 1
-                except (discord.Forbidden, discord.DiscordServerError):
+                except (discord.Forbidden, discord.DiscordServerError, discord.NotFound):
                     continue
             with open(activity_file, 'r', encoding='utf8') as f:
                 data = json.load(f)

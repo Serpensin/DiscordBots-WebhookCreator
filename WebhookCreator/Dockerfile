@@ -2,7 +2,9 @@ FROM python:3.12.3-alpine
 
 WORKDIR /app
 
-COPY *.py .
+COPY CustomModules ./CustomModules
+COPY main.py .
+COPY __init__.py .
 COPY requirements.txt .
 
 ENV TERM xterm

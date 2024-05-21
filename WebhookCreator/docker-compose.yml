@@ -5,6 +5,7 @@ services:
             - TOKEN=YOUR_DISCORD_BOT_TOKEN
             - OWNER_ID=DISCORDID_OF_BOTOWNER
             - SUPPORT_SERVER=DISCORD-ID-SUPPORTSERVER
+            - LOG_LEVEL=INFO
         restart: always
         image: 'serpensin/discord_webhook_creator'
         container_name: 'WebhookCreator'

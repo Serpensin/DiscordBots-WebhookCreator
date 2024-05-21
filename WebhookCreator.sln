@@ -10,8 +10,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Pr
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		.gitlab-ci.yml = .gitlab-ci.yml
+		debug_build.bat = debug_build.bat
 		LICENSE = LICENSE
 		README.md = README.md
+		release_build.bat = release_build.bat
 	EndProjectSection
 EndProject
 Global

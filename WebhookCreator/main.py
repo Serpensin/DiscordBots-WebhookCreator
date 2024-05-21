@@ -1,21 +1,19 @@
 #Import
-print('Loading...')
+import time
+startupTime_start = time.time()
 import aiohttp
 import asyncio
 import datetime
 import discord
 import json
 import jsonschema
-import logging
-import logging.handlers
 import os
 import platform
 import sentry_sdk
 import signal
 import sys
-import time
-import traceback
 from aiohttp import web
+from CustomModules import log_handler
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -37,41 +35,23 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
-bot_version = "1.7.2"
+bot_version = "1.8.0"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
 TOPGG_TOKEN = os.getenv('TOPGG_TOKEN')
+LOG_LEVEL = os.getenv('LOG_LEVEL')
 
-#Set-ip logging
+#Set-up logging
 os.makedirs(f'{APP_FOLDER_NAME}//Logs', exist_ok=True)
 os.makedirs(f'{APP_FOLDER_NAME}//Buffer', exist_ok=True)
 LOG_FOLDER = f'{APP_FOLDER_NAME}//Logs//'
 BUFFER_FOLDER = f'{APP_FOLDER_NAME}//Buffer//'
-logger = logging.getLogger('discord')
-manlogger = logging.getLogger('Program')
-logger.setLevel(logging.INFO)
-manlogger.setLevel(logging.INFO)
-logging.getLogger('discord.http').setLevel(logging.INFO)
-handler = logging.handlers.TimedRotatingFileHandler(
-    filename = f'{LOG_FOLDER}{BOT_NAME}.log',
-    encoding = 'utf-8',
-    when = 'midnight',
-    backupCount = 27
-    )
-dt_fmt = '%Y-%m-%d %H:%M:%S'
-formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-manlogger.addHandler(handler)
-manlogger.info('Engine powering up...')
+log_manager = log_handler.LogManager(LOG_FOLDER, BOT_NAME, LOG_LEVEL)
+discord_logger = log_manager.get_logger('discord')
+program_logger = log_manager.get_logger('Program')
+program_logger.info('Engine powering up...')
 
-
-# print() will only print if run in debugger. pt() will always print.
-pt = print
-def print(msg):
-    if sys.gettrace() is not None:
-        pt(msg)
 
 #Create activity.json if not exists
 class JSONValidator:
@@ -108,10 +88,10 @@ class JSONValidator:
                     data = json.load(file)
                     jsonschema.validate(instance=data, schema=self.schema)  # validate the data
                 except jsonschema.exceptions.ValidationError as ve:
-                    print(f'ValidationError: {ve}')
+                    program_logger.debug(f'ValidationError: {ve}')
                     self.write_default_content()
                 except json.decoder.JSONDecodeError as jde:
-                    print(f'JSONDecodeError: {jde}')
+                    program_logger.debug(f'JSONDecodeError: {jde}')
                     self.write_default_content()
         else:
             self.write_default_content()
@@ -184,7 +164,7 @@ class aclient(discord.AutoShardedClient):
 
         if message.guild is None and message.author.id == int(OWNERID):
             args = message.content.split(' ')
-            print(args)
+            program_logger.debug(args)
             command, *args = args
             if command == 'help':
                 await __wrong_selection()
@@ -234,26 +214,30 @@ class aclient(discord.AutoShardedClient):
                     except discord.NotFound:
                         pass
                 except Exception as e:
-                    traceback.print_exception(type(error), error, error.__traceback__)
+                    program_logger.warning(f"Unexpected error while sending message: {e}")
             finally:
-                traceback.print_exception(type(error), error, error.__traceback__)
+                try:
+                    program_logger.warning(f"{error} -> {option_values} | Invoked by {interaction.user.name} ({interaction.user.id}) @ {interaction.guild.name} ({interaction.guild.id}) with Language {interaction.locale[1]}")
+                except AttributeError:
+                    program_logger.warning(f"{error} -> {option_values} | Invoked by {interaction.user.name} ({interaction.user.id}) with Language {interaction.locale[1]}")
+                sentry_sdk.capture_exception(error)
 
     async def on_ready(self):
         if self.initialized:
             await bot.change_presence(activity = self.Presence.get_activity(), status = self.Presence.get_status())
             return
         if not self.synced:
-            pt('Syncing commands...')
+            program_logger.info('Syncing commands...')
             await tree.sync()
-            print('Commands synced.')
+            program_logger.debug('Commands synced.')
             self.synced = True
         global owner, start_time, shutdown
         shutdown = False
         try:
             owner = await bot.fetch_user(OWNERID)
-            print('Owner found.')
+            program_logger.debug('Owner found.')
         except:
-            print('Owner not found.')
+            program_logger.debug('Owner not found.')
 
         #Start background tasks
         if TOPGG_TOKEN:
@@ -262,7 +246,7 @@ class aclient(discord.AutoShardedClient):
         bot.loop.create_task(Functions.webhook_count_activity())
 
         await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
-        pt(r'''
+        program_logger.info(r'''
  __      __          __       __                      __      ____                          __
 /\ \  __/\ \        /\ \     /\ \                    /\ \    /\  _`\                       /\ \__
 \ \ \/\ \ \ \     __\ \ \____\ \ \___     ___     ___\ \ \/'\\ \ \/\_\  _ __    __     __  \ \ ,_\   ___   _ __
@@ -272,7 +256,7 @@ class aclient(discord.AutoShardedClient):
     '\/__//__/  \/____/ \/___/   \/_/\/_/\/___/  \/___/  \/_/\/_/\/___/  \/_/ \/____/\/__/\/_/ \/__/\/___/  \/_/
         ''')
         start_time = datetime.datetime.now(datetime.UTC)
-        pt('READY')
+        program_logger.info(f"Initialization completed in {time.time() - startupTime_start} seconds.")
         self.initialized = True
 bot = aclient()
 tree = discord.app_commands.CommandTree(bot)
@@ -285,8 +269,7 @@ class SignalHandler:
         signal.signal(signal.SIGTERM, self._shutdown)
 
     def _shutdown(self, signum, frame):
-        manlogger.info('Received signal to shutdown...')
-        pt('Received signal to shutdown...')
+        program_logger.info('Received signal to shutdown...')
         bot.loop.create_task(Owner.shutdown(owner))
 
 
@@ -309,7 +292,7 @@ class Functions():
         try:
             await site.start()
         except OSError as e:
-            pt(f'Error while starting health server: {e}')
+            program_logger.warning(f'Error while starting health server: {e}')
 
     async def create_support_invite(interaction):
         try:
@@ -351,7 +334,7 @@ class Functions():
             async with aiohttp.ClientSession() as session:
                 async with session.post(f'https://top.gg/api/bots/{bot.user.id}/stats', headers=headers, json={'server_count': len(bot.guilds), 'shard_count': len(bot.shards)}) as resp:
                     if resp.status != 200:
-                        print(f'Failed to update top.gg: {resp.status} {resp.reason}')
+                        program_logger.debug(f'Failed to update top.gg: {resp.status} {resp.reason}')
             try:
                 await asyncio.sleep(60*30)
             except asyncio.CancelledError:
@@ -376,7 +359,7 @@ class Functions():
             with open(activity_file, 'w', encoding='utf8') as f:
                 json.dump(data, f, indent=2)
             await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
-            pt(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
+            program_logger.info(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
 
         while not shutdown:
             await function()
@@ -412,8 +395,8 @@ class Owner():
         action = args[0].lower()
         url = remove_and_save(args[1:])
         title = ' '.join(args[1:])
-        print(title)
-        print(url)
+        program_logger.debug(title)
+        program_logger.debug(url)
         with open(activity_file, 'r', encoding='utf8') as f:
             data = json.load(f)
         if action == 'playing':
@@ -532,7 +515,7 @@ class Owner():
 
     async def shutdown(message):
         global shutdown
-        manlogger.info('Engine powering down...')
+        program_logger.info('Engine powering down...')
         try:
             await message.channel.send('Engine powering down...')
         except:
@@ -621,13 +604,17 @@ async def self(interaction: discord.Interaction, name: str, channel: discord.Tex
 
 if __name__ == '__main__':
     if not TOKEN:
-        sys.exit('Missing token. Please check your .env file.')
+        error_message = 'Missing token. Please check your .env file.'
+        program_logger.critical(error_message)
+        sys.exit(error_message)
     else:
         try:
             SignalHandler()
             bot.run(TOKEN, log_handler=None)
         except discord.errors.LoginFailure:
-            sys.exit('Invalid token. Please check your .env file.')
+            error_message = 'Invalid token. Please check your .env file.'
+            program_logger.critical(error_message)
+            sys.exit(error_message)
         except asyncio.CancelledError:
             if shutdown:
                 pass

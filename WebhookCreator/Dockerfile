@@ -15,7 +15,7 @@ ARG BUILD_DATE
 ARG COMMIT
 ARG VERSION
 
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev rust cargo && \
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev linux-headers rust cargo g++ && \
     python -m pip install --upgrade pip && \
     pip install --upgrade setuptools && \
     pip install -r requirements.txt && \

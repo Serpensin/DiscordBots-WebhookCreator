@@ -35,7 +35,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
-bot_version = "1.8.0"
+bot_version = "1.8.1"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -594,8 +594,15 @@ async def self(interaction: discord.Interaction):
 @discord.app_commands.describe(name='Name of the webhook.', channel='Channel the webhook should be created in.')
 async def self(interaction: discord.Interaction, name: str, channel: discord.TextChannel):
     if channel.permissions_for(interaction.user).manage_webhooks:
-        webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
-        await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
+        try:
+            webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
+            await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
+        except discord.errors.HTTPException as e:
+            if e.code == 30007:
+                await interaction.response.send_message(f'You reached the maximum amount of webhooks in this guild.\nThis is a limit, imposed by discord, which I can\'t change.', ephemeral=True)
+            else:
+                await interaction.response.send_message(f'An error occured while creating the webhook.', ephemeral=True)
+                program_logger.error(f'Error while creating webhook: {e}')
     else:
         await interaction.response.send_message(f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
 

@@ -9,6 +9,7 @@ import json
 import jsonschema
 import os
 import platform
+import psutil
 import sentry_sdk
 import signal
 import sys
@@ -35,7 +36,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
-bot_version = "1.8.1"
+bot_version = "1.8.2"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -568,6 +569,17 @@ async def self(interaction: discord.Interaction):
     embed.add_field(name="Repo", value=f"[GitLab](https://gitlab.bloodygang.com/Serpensin/Discord-Webhook-Creator)", inline=True)
     embed.add_field(name="Invite", value=f"[Invite me](https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=536870912&scope=bot%20applications.commands)", inline=True)
     embed.add_field(name="\u200b", value="\u200b", inline=True)
+
+    if interaction.user.id == int(OWNERID):
+        # Add CPU and RAM usage
+        process = psutil.Process(os.getpid())
+        cpu_usage = process.cpu_percent()
+        ram_usage = round(process.memory_percent(), 2)
+        ram_real = round(process.memory_info().rss / (1024 ** 2), 2)
+
+        embed.add_field(name="CPU", value=f"{cpu_usage}%", inline=True)
+        embed.add_field(name="RAM", value=f"{ram_usage}%", inline=True)
+        embed.add_field(name="RAM", value=f"{ram_real} MB", inline=True)
 
     await interaction.edit_original_response(embed=embed)
 #Support Invite

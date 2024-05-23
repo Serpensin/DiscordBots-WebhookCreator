@@ -256,7 +256,7 @@ class aclient(discord.AutoShardedClient):
    \ `\___x___/\ \____\\ \_,__/ \ \_\ \_\ \____/\ \____/\ \_\ \_\ \____/\ \_\\ \____\ \__/.\_\\ \__\ \____/\ \_\
     '\/__//__/  \/____/ \/___/   \/_/\/_/\/___/  \/___/  \/_/\/_/\/___/  \/_/ \/____/\/__/\/_/ \/__/\/___/  \/_/
         ''')
-        start_time = datetime.datetime.now(datetime.UTC)
+        start_time = datetime.datetime.now()
         program_logger.info(f"Initialization completed in {time.time() - startupTime_start} seconds.")
         self.initialized = True
 bot = aclient()
@@ -548,7 +548,7 @@ async def self(interaction: discord.Interaction):
 
     embed.add_field(name="Created at", value=bot.user.created_at.strftime("%d.%m.%Y, %H:%M:%S"), inline=True)
     embed.add_field(name="Bot-Version", value=bot_version, inline=True)
-    embed.add_field(name="Uptime", value=str(datetime.timedelta(seconds=int((datetime.datetime.now(datetime.UTC) - start_time).total_seconds()))), inline=True)
+    embed.add_field(name="Uptime", value=str(datetime.timedelta(seconds=int((datetime.datetime.now() - start_time).total_seconds()))), inline=True)
 
     embed.add_field(name="Bot-Owner", value=f"<@!{OWNERID}>", inline=True)
     embed.add_field(name="\u200b", value="\u200b", inline=True)

@@ -26,10 +26,10 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev l
     -exec rm -rf '{}' + && \
     rm -rf /root/.cache/pip
 
-LABEL maintainer="Discord: the_devil_of_the_rhine (863687441809801246)" \
+LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       commit=$COMMIT \
       description="Discord bot for creating Webhooks." \
       release=$BUILD_DATE \
-      version="1.8.2"
+      version="1.8.3"
 
 CMD ["python3", "main.py"]

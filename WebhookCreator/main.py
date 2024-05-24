@@ -36,7 +36,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
-bot_version = "1.8.3"
+bot_version = "1.8.4"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -605,6 +605,9 @@ async def self(interaction: discord.Interaction):
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.channel.id))
 @discord.app_commands.describe(name='Name of the webhook.', channel='Channel the webhook should be created in.')
 async def self(interaction: discord.Interaction, name: str, channel: discord.TextChannel):
+    if 'discord' in name.lower():
+        await interaction.response.send_message('Please choose a different name for your webhook.', ephemeral=True)
+        return
     if channel.permissions_for(interaction.user).manage_webhooks:
         try:
             webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')

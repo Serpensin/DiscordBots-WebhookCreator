@@ -36,7 +36,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
-bot_version = "1.8.4"
+bot_version = "1.8.5"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -608,19 +608,22 @@ async def self(interaction: discord.Interaction, name: str, channel: discord.Tex
     if 'discord' in name.lower():
         await interaction.response.send_message('Please choose a different name for your webhook.', ephemeral=True)
         return
-    if channel.permissions_for(interaction.user).manage_webhooks:
-        try:
-            webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
-            await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
-        except discord.errors.HTTPException as e:
-            if e.code == 30007:
-                await interaction.response.send_message(f'You reached the maximum amount of webhooks in this guild.\nThis is a limit, imposed by discord, which I can\'t change.', ephemeral=True)
-            else:
-                _message = f'Error while creating webhook: {e}'    
-                await interaction.response.send_message(_message, ephemeral=True)
-                program_logger.error(_message)
-    else:
+    if not channel.permissions_for(interaction.user).manage_webhooks:
         await interaction.response.send_message(f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
+        return
+    if not channel.permissions_for(interaction.guild.me).manage_webhooks:
+        await interaction.response.send_message(f'I need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
+        return
+    try:
+        webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
+        await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
+    except discord.errors.HTTPException as e:
+        if e.code == 30007:
+            await interaction.response.send_message(f'You reached the maximum amount of webhooks in this guild.\nThis is a limit, imposed by discord, which I can\'t change.', ephemeral=True)
+        else:
+            _message = f'Error while creating webhook: {e}'    
+            await interaction.response.send_message(_message, ephemeral=True)
+            program_logger.error(_message)
 
 
 

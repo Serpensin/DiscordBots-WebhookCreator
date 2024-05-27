@@ -21,27 +21,28 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 
 
-#Sentry
 discord.VoiceClient.warn_nacl = False
+APP_FOLDER_NAME = 'WH-Creator'
+BOT_NAME = 'WebhookCreator'
+if not os.path.exists(APP_FOLDER_NAME):
+    os.makedirs(APP_FOLDER_NAME)
+ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
+BOT_VERSION = "1.8.6"
+TOKEN = os.getenv('TOKEN')
+OWNERID = os.getenv('OWNER_ID')
+SUPPORTID = os.getenv('SUPPORT_SERVER')
+TOPGG_TOKEN = os.getenv('TOPGG_TOKEN')
+LOG_LEVEL = os.getenv('LOG_LEVEL')
+
+#Sentry
 load_dotenv()
 sentry_sdk.init(
     dsn=os.getenv('SENTRY_DSN'),
     traces_sample_rate=1.0,
     profiles_sample_rate=1.0,
     environment='Production',
+    release=f'{BOT_NAME}@{BOT_VERSION}'
 )
-
-APP_FOLDER_NAME = 'WH-Creator'
-BOT_NAME = 'WebhookCreator'
-if not os.path.exists(APP_FOLDER_NAME):
-    os.makedirs(APP_FOLDER_NAME)
-activity_file = os.path.join(APP_FOLDER_NAME, 'activity.json')
-bot_version = "1.8.5"
-TOKEN = os.getenv('TOKEN')
-OWNERID = os.getenv('OWNER_ID')
-SUPPORTID = os.getenv('SUPPORT_SERVER')
-TOPGG_TOKEN = os.getenv('TOPGG_TOKEN')
-LOG_LEVEL = os.getenv('LOG_LEVEL')
 
 #Set-up logging
 os.makedirs(f'{APP_FOLDER_NAME}//Logs', exist_ok=True)
@@ -100,7 +101,7 @@ class JSONValidator:
     def write_default_content(self):
         with open(self.file_path, 'w') as file:
             json.dump(self.default_content, file, indent=4)
-validator = JSONValidator(activity_file)
+validator = JSONValidator(ACTIVITY_FILE)
 validator.validate_and_fix_json()
 
 
@@ -122,7 +123,7 @@ class aclient(discord.AutoShardedClient):
     class Presence():
         @staticmethod
         def get_activity() -> discord.Activity:
-            with open(activity_file) as f:
+            with open(ACTIVITY_FILE) as f:
                 data = json.load(f)
                 activity_type = data['activity_type']
                 activity_title = data['activity_title']
@@ -140,7 +141,7 @@ class aclient(discord.AutoShardedClient):
 
         @staticmethod
         def get_status() -> discord.Status:
-            with open(activity_file) as f:
+            with open(ACTIVITY_FILE) as f:
                 data = json.load(f)
                 status = data['status']
             if status == 'online':
@@ -352,12 +353,12 @@ class Functions():
                             webhook_count += 1
                 except (discord.Forbidden, discord.DiscordServerError, discord.NotFound):
                     continue
-            with open(activity_file, 'r', encoding='utf8') as f:
+            with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
                 data = json.load(f)
             data['activity_type'] = 'Watching'
             data['activity_title'] = f"{webhook_count} webhooks in {len(bot.guilds)} guilds."
             data['activity_url'] = ''
-            with open(activity_file, 'w', encoding='utf8') as f:
+            with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
                 json.dump(data, f, indent=2)
             await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
             program_logger.info(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
@@ -398,7 +399,7 @@ class Owner():
         title = ' '.join(args[1:])
         program_logger.debug(title)
         program_logger.debug(url)
-        with open(activity_file, 'r', encoding='utf8') as f:
+        with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
             data = json.load(f)
         if action == 'playing':
             data['activity_type'] = 'Playing'
@@ -423,7 +424,7 @@ class Owner():
         else:
             await __wrong_selection()
             return
-        with open(activity_file, 'w', encoding='utf8') as f:
+        with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
             json.dump(data, f, indent=2)
         await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
         await message.channel.send(f'Activity set to {action} {title}{" " + url if url else ""}.')
@@ -496,7 +497,7 @@ class Owner():
             await __wrong_selection()
             return
         action = args[0].lower()
-        with open(activity_file, 'r', encoding='utf8') as f:
+        with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
             data = json.load(f)
         if action == 'online':
             data['status'] = 'online'
@@ -509,7 +510,7 @@ class Owner():
         else:
             await __wrong_selection()
             return
-        with open(activity_file, 'w', encoding='utf8') as f:
+        with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
             json.dump(data, f, indent=2)
         await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
         await message.channel.send(f'Status set to {action}.')
@@ -535,7 +536,7 @@ class Owner():
 #Bot Information
 @tree.command(name = 'botinfo', description = 'Get information about the bot.')
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
-async def self(interaction: discord.Interaction):
+async def botinfo(interaction: discord.Interaction):
     await interaction.response.defer()
 
     member_count = sum(guild.member_count for guild in bot.guilds)
@@ -547,7 +548,7 @@ async def self(interaction: discord.Interaction):
     embed.set_thumbnail(url=bot.user.avatar.url if bot.user.avatar else '')
 
     embed.add_field(name="Created at", value=bot.user.created_at.strftime("%d.%m.%Y, %H:%M:%S"), inline=True)
-    embed.add_field(name="Bot-Version", value=bot_version, inline=True)
+    embed.add_field(name="Bot-Version", value=BOT_VERSION, inline=True)
     embed.add_field(name="Uptime", value=str(datetime.timedelta(seconds=int((datetime.datetime.now() - start_time).total_seconds()))), inline=True)
 
     embed.add_field(name="Bot-Owner", value=f"<@!{OWNERID}>", inline=True)
@@ -586,7 +587,7 @@ async def self(interaction: discord.Interaction):
 if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')
     @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
-    async def self(interaction: discord.Interaction):
+    async def support(interaction: discord.Interaction):
         if str(interaction.guild.id) != SUPPORTID:
             await interaction.response.defer(ephemeral = True)
             await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
@@ -594,7 +595,7 @@ if support_available:
             await interaction.response.send_message('You are already in our support server!', ephemeral = True)
 #Ping
 @tree.command(name = 'ping', description = 'Test, if the bot is responding.')
-async def self(interaction: discord.Interaction):
+async def ping(interaction: discord.Interaction):
     before = time.monotonic()
     await interaction.response.send_message('Pong!')
     ping = (time.monotonic() - before) * 1000
@@ -604,7 +605,7 @@ async def self(interaction: discord.Interaction):
 @tree.command(name = 'create_webhook', description = 'Create a webhook.')
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.channel.id))
 @discord.app_commands.describe(name='Name of the webhook.', channel='Channel the webhook should be created in.')
-async def self(interaction: discord.Interaction, name: str, channel: discord.TextChannel):
+async def create_webhook(interaction: discord.Interaction, name: str, channel: discord.TextChannel):
     if 'discord' in name.lower():
         await interaction.response.send_message('Please choose a different name for your webhook.', ephemeral=True)
         return
@@ -614,6 +615,8 @@ async def self(interaction: discord.Interaction, name: str, channel: discord.Tex
     if not channel.permissions_for(interaction.guild.me).manage_webhooks:
         await interaction.response.send_message(f'I need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
         return
+    if name == '':
+        name = 'WebhookCreator'
     try:
         webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
         await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)

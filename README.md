@@ -1,4 +1,4 @@
-# Info
+# WebhookCreator DiscordBot [![Discord Bot Invite](https://img.shields.io/badge/Invite-blue)](https://discord.com/api/oauth2/authorize?client_id=974023271303499796&permissions=536871936&scope=bot)[![Discord Bots](https://top.gg/api/widget/servers/974023271303499796.svg)](https://top.gg/bot/974023271303499796)
 
 With this bot you can create application webhooks that can be used to send messages with buttons.
 Keep in mind that the webhooks get deleted, if you remove the bot from your server. (But it doesn't have to be online.)
@@ -27,5 +27,3 @@ You can use the bot to create webhooks for your server, or for other servers. (I
       1. Make sure you have Docker installed. (https://docs.docker.com/get-docker/)
       2. Open a terminal.
       3. Run `docker run -d -e TOKEN=BOT_TOKEN -e owner_id=DISCORD_ID_OF_OWNER --name webhookcreator serpensin/discord_webhook_creator` to start the bot.
-
-You can also [invite](https://discord.com/api/oauth2/authorize?client_id=974023271303499796&permissions=536871936&scope=bot%20applications.commands) the bot I host to your server.

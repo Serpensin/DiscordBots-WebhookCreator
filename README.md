@@ -28,4 +28,4 @@ You can use the bot to create webhooks for your server, or for other servers. (I
       2. Open a terminal.
       3. Run `docker run -d -e TOKEN=BOT_TOKEN -e owner_id=DISCORD_ID_OF_OWNER --name webhookcreator serpensin/discord_webhook_creator` to start the bot.
 
-You can also [invite](https://discord.com/api/oauth2/authorize?client_id=974023271303499796&permissions=536870912&scope=bot%20applications.commands) the bot I host to your server.
+You can also [invite](https://discord.com/api/oauth2/authorize?client_id=974023271303499796&permissions=536871936&scope=bot%20applications.commands) the bot I host to your server.

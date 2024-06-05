@@ -27,7 +27,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.8.7"
+BOT_VERSION = "1.8.8"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -615,7 +615,7 @@ async def create_webhook(interaction: discord.Interaction, name: str, channel: d
     if not channel.permissions_for(interaction.guild.me).manage_webhooks:
         await interaction.response.send_message(f'I need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
         return
-    if name == '':
+    if len(name) < 1 or len(name) > 80 or name.strip() == '':
         name = 'WebhookCreator'
     try:
         webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')

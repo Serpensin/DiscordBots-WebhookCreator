@@ -27,7 +27,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.8.9"
+BOT_VERSION = "1.8.10"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -540,8 +540,9 @@ class Owner():
         forbidden = 0
         error = 0
         for guild in bot.guilds:
+            guild_owner = await bot.fetch_user(guild.owner_id)
             try:
-                await guild.owner.send(f'Broadcast from the owner of the bot:\n{message}')
+                await guild_owner.send(f'Broadcast from the owner of the bot:\n{message}')
                 success += 1
             except discord.Forbidden:
                 forbidden += 1

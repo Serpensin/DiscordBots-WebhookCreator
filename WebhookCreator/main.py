@@ -27,7 +27,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.8.8"
+BOT_VERSION = "1.8.9"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -157,11 +157,12 @@ class aclient(discord.AutoShardedClient):
         async def __wrong_selection():
             await message.channel.send('```'
                                        'Commands:\n'
-                                       'help - Shows this message\n'
                                        'activity - Set the activity of the bot\n'
+                                       'broadcast - Broadcast a message to all server owners\n'
+                                       'help - Shows this message\n'
                                        'log - Get the log\n'
-                                       'status - Set the status of the bot\n'
                                        'shutdown - Shutdown the bot\n'
+                                       'status - Set the status of the bot\n'
                                        '```')
 
         if message.guild is None and message.author.id == int(OWNERID):
@@ -182,6 +183,9 @@ class aclient(discord.AutoShardedClient):
                 return
             elif command == 'shutdown':
                 await Owner.shutdown(message)
+                return
+            elif command == 'broadcast':
+                await Owner.broadcast(' '.join(args))
                 return
             else:
                 await __wrong_selection()
@@ -530,6 +534,20 @@ class Owner():
         await asyncio.gather(*tasks, return_exceptions=True)
 
         await bot.close()
+
+    async def broadcast(message):
+        success = 0
+        forbidden = 0
+        error = 0
+        for guild in bot.guilds:
+            try:
+                await guild.owner.send(f'Broadcast from the owner of the bot:\n{message}')
+                success += 1
+            except discord.Forbidden:
+                forbidden += 1
+            except:
+                error += 1
+        await owner.send(f'Broadcast finished.\nSuccess: {success}\nForbidden: {forbidden}\nError: {error}')
 
 
 ##Bot Commands----------------------------------------

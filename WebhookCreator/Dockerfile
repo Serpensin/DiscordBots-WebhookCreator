@@ -1,4 +1,4 @@
-FROM python:3.12.3-alpine
+FROM python:3.12.4-alpine
 
 WORKDIR /app
 
@@ -30,6 +30,6 @@ LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       commit=$COMMIT \
       description="Discord bot for creating Webhooks." \
       release=$BUILD_DATE \
-      version="1.8.10"
+      version="1.8.11"
 
 CMD ["python3", "main.py"]

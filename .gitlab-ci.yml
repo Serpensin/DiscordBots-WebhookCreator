@@ -15,6 +15,6 @@ docker-build:
 workflow:
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
-      when: always
+      when: never
     - if: $CI_PIPELINE_SOURCE == "trigger"
-      when: always
+      when: never

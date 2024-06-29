@@ -15,7 +15,7 @@
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>True</EnableNativeCodeDebugging>
-    <InterpreterId>MSBuild|WebhookCreator|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|Webhook Creator|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -41,10 +41,10 @@
     <Folder Include="CustomModules\" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\..\Venvs\WebhookCreator\">
-      <Id>WebhookCreator</Id>
+    <Interpreter Include="H:\venvs\Webhook Creator\">
+      <Id>Webhook Creator</Id>
       <Version>0.0</Version>
-      <Description>WebhookCreator (Python 3.12 (64-bit))</Description>
+      <Description>Webhook Creator (Python 3.12 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>

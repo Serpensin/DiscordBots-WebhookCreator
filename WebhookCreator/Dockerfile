@@ -7,8 +7,8 @@ COPY main.py .
 COPY __init__.py .
 COPY requirements.txt .
 
-ENV TERM xterm
-ENV PYTHONUNBUFFERED 1
+ENV TERM=xterm
+ENV PYTHONUNBUFFERED=1
 
 ARG TARGETPLATFORM
 ARG BUILD_DATE
@@ -30,6 +30,6 @@ LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       commit=$COMMIT \
       description="Discord bot for creating Webhooks." \
       release=$BUILD_DATE \
-      version="1.8.11"
+      version="1.8.12"
 
 CMD ["python3", "main.py"]

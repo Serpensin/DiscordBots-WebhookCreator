@@ -72,7 +72,8 @@ class LogManager:
             filename=os.path.join(self.log_folder, f'{self.app_folder_name}.log'),
             when='midnight',
             encoding='utf-8',
-            backupCount=27
+            backupCount=27,
+            delay=True
         )
         
         # Create a console handler with color support

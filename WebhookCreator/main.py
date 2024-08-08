@@ -21,21 +21,21 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 
 
+load_dotenv()
 discord.VoiceClient.warn_nacl = False
 APP_FOLDER_NAME = 'WH-Creator'
 BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.8.12"
+BOT_VERSION = "1.8.13"
 TOKEN = os.getenv('TOKEN')
-OWNERID = 970119359840284743
+OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
 TOPGG_TOKEN = os.getenv('TOPGG_TOKEN')
 LOG_LEVEL = os.getenv('LOG_LEVEL')
 
 #Sentry
-load_dotenv()
 sentry_sdk.init(
     dsn=os.getenv('SENTRY_DSN'),
     traces_sample_rate=1.0,
@@ -641,7 +641,7 @@ async def create_webhook(interaction: discord.Interaction, name: str, channel: d
     if len(name) < 1 or len(name) > 80 or name.strip() == '':
         name = 'WebhookCreator'
     try:
-        webhook = await interaction.channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
+        webhook = await channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
         await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
     except discord.errors.HTTPException as e:
         if e.code == 30007:

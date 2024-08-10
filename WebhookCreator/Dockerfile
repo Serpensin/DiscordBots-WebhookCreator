@@ -16,6 +16,7 @@ ARG COMMIT
 ARG VERSION
 
 RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev linux-headers rust cargo g++ && \
+    apk add curl && \
     python -m pip install --upgrade pip && \
     pip install --upgrade setuptools && \
     pip install -r requirements.txt && \
@@ -30,6 +31,6 @@ LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       commit=$COMMIT \
       description="Discord bot for creating Webhooks." \
       release=$BUILD_DATE \
-      version="1.8.13"
+      version="1.8.14"
 
 CMD ["python3", "main.py"]

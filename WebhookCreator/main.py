@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.8.14"
+BOT_VERSION = "1.9.0"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -118,51 +118,18 @@ class aclient(discord.AutoShardedClient):
                         )
         self.synced = False
         self.initialized = False
+        self.webhook_count = 0
+        self.guild_count = 0
 
-
-    class Presence():
-        @staticmethod
-        def get_activity() -> discord.Activity:
-            with open(ACTIVITY_FILE) as f:
-                data = json.load(f)
-                activity_type = data['activity_type']
-                activity_title = data['activity_title']
-                activity_url = data['activity_url']
-            if activity_type == 'Playing':
-                return discord.Game(name=activity_title)
-            elif activity_type == 'Streaming':
-                return discord.Streaming(name=activity_title, url=activity_url)
-            elif activity_type == 'Listening':
-                return discord.Activity(type=discord.ActivityType.listening, name=activity_title)
-            elif activity_type == 'Watching':
-                return discord.Activity(type=discord.ActivityType.watching, name=activity_title)
-            elif activity_type == 'Competing':
-                return discord.Activity(type=discord.ActivityType.competing, name=activity_title)
-
-        @staticmethod
-        def get_status() -> discord.Status:
-            with open(ACTIVITY_FILE) as f:
-                data = json.load(f)
-                status = data['status']
-            if status == 'online':
-                return discord.Status.online
-            elif status == 'idle':
-                return discord.Status.idle
-            elif status == 'dnd':
-                return discord.Status.dnd
-            elif status == 'invisible':
-                return discord.Status.invisible
 
     async def on_message(self, message):
         async def __wrong_selection():
             await message.channel.send('```'
                                        'Commands:\n'
-                                       'activity - Set the activity of the bot\n'
                                        'broadcast - Broadcast a message to all server owners\n'
                                        'help - Shows this message\n'
                                        'log - Get the log\n'
                                        'shutdown - Shutdown the bot\n'
-                                       'status - Set the status of the bot\n'
                                        '```')
 
         if message.guild is None and message.author.id == int(OWNERID):
@@ -172,14 +139,8 @@ class aclient(discord.AutoShardedClient):
             if command == 'help':
                 await __wrong_selection()
                 return
-            elif command == 'activity':
-                await Owner.activity(message, args)
-                return
             elif command == 'log':
                 await Owner.log(message, args)
-                return
-            elif command == 'status':
-                await Owner.status(message, args)
                 return
             elif command == 'shutdown':
                 await Owner.shutdown(message)
@@ -230,7 +191,6 @@ class aclient(discord.AutoShardedClient):
 
     async def on_ready(self):
         if self.initialized:
-            await bot.change_presence(activity = self.Presence.get_activity(), status = self.Presence.get_status())
             return
         if not self.synced:
             program_logger.info('Syncing commands...')
@@ -251,7 +211,6 @@ class aclient(discord.AutoShardedClient):
         bot.loop.create_task(Functions.health_server())
         bot.loop.create_task(Functions.webhook_count_activity())
 
-        await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
         program_logger.info(r'''
  __      __          __       __                      __      ____                          __
 /\ \  __/\ \        /\ \     /\ \                    /\ \    /\  _`\                       /\ \__
@@ -357,14 +316,15 @@ class Functions():
                             webhook_count += 1
                 except (discord.Forbidden, discord.DiscordServerError, discord.NotFound):
                     continue
-            with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
-                data = json.load(f)
-            data['activity_type'] = 'Watching'
-            data['activity_title'] = f"{webhook_count} webhooks in {len(bot.guilds)} guilds."
-            data['activity_url'] = ''
-            with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
-                json.dump(data, f, indent=2)
-            await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
+            if webhook_count == bot.webhook_count and len(bot.guilds) == bot.guild_count:
+                return
+            activity = discord.Activity(
+                type=discord.ActivityType.watching,
+                name=f'{webhook_count} webhooks in {len(bot.guilds)} guilds.'
+                )
+            await bot.change_presence(activity = activity, status = discord.Status.online)
+            bot.webhook_count = webhook_count
+            bot.guild_count = len(bot.guilds)
             program_logger.info(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
 
         while not shutdown:
@@ -377,62 +337,6 @@ class Functions():
 
 ##Owner Commands
 class Owner():
-    async def activity(message, args):
-        async def __wrong_selection():
-            await message.channel.send('```'
-                                       'activity [playing/streaming/listening/watching/competing] [title] (url) - Set the activity of the bot\n'
-                                       '```')
-        def isURL(zeichenkette):
-            try:
-                ergebnis = urlparse(zeichenkette)
-                return all([ergebnis.scheme, ergebnis.netloc])
-            except:
-                return False
-
-        def remove_and_save(liste):
-            if liste and isURL(liste[-1]):
-                return liste.pop()
-            else:
-                return None
-
-        if args == []:
-            await __wrong_selection()
-            return
-        action = args[0].lower()
-        url = remove_and_save(args[1:])
-        title = ' '.join(args[1:])
-        program_logger.debug(title)
-        program_logger.debug(url)
-        with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
-            data = json.load(f)
-        if action == 'playing':
-            data['activity_type'] = 'Playing'
-            data['activity_title'] = title
-            data['activity_url'] = ''
-        elif action == 'streaming':
-            data['activity_type'] = 'Streaming'
-            data['activity_title'] = title
-            data['activity_url'] = url
-        elif action == 'listening':
-            data['activity_type'] = 'Listening'
-            data['activity_title'] = title
-            data['activity_url'] = ''
-        elif action == 'watching':
-            data['activity_type'] = 'Watching'
-            data['activity_title'] = title
-            data['activity_url'] = ''
-        elif action == 'competing':
-            data['activity_type'] = 'Competing'
-            data['activity_title'] = title
-            data['activity_url'] = ''
-        else:
-            await __wrong_selection()
-            return
-        with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
-            json.dump(data, f, indent=2)
-        await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
-        await message.channel.send(f'Activity set to {action} {title}{" " + url if url else ""}.')
-
     async def log(message, args):
         async def __wrong_selection():
             await message.channel.send('```'
@@ -490,34 +394,6 @@ class Owner():
             if os.path.exists(f'{BUFFER_FOLDER}log-lines.txt'):
                 os.remove(f'{BUFFER_FOLDER}log-lines.txt')
             return
-
-    async def status(message, args):
-        async def __wrong_selection():
-            await message.channel.send('```'
-                                       'status [online/idle/dnd/invisible] - Set the status of the bot\n'
-                                       '```')
-
-        if args == []:
-            await __wrong_selection()
-            return
-        action = args[0].lower()
-        with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
-            data = json.load(f)
-        if action == 'online':
-            data['status'] = 'online'
-        elif action == 'idle':
-            data['status'] = 'idle'
-        elif action == 'dnd':
-            data['status'] = 'dnd'
-        elif action == 'invisible':
-            data['status'] = 'invisible'
-        else:
-            await __wrong_selection()
-            return
-        with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
-            json.dump(data, f, indent=2)
-        await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
-        await message.channel.send(f'Status set to {action}.')
 
     async def shutdown(message):
         global shutdown

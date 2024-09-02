@@ -31,6 +31,6 @@ LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       commit=$COMMIT \
       description="Discord bot for creating Webhooks." \
       release=$BUILD_DATE \
-      version="1.9.0"
+      version="1.9.1"
 
 CMD ["python3", "main.py"]

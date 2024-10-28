@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.9.1"
+BOT_VERSION = "1.10.0"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -101,8 +101,7 @@ class JSONValidator:
     def write_default_content(self):
         with open(self.file_path, 'w') as file:
             json.dump(self.default_content, file, indent=4)
-validator = JSONValidator(ACTIVITY_FILE)
-validator.validate_and_fix_json()
+JSONValidator(ACTIVITY_FILE).validate_and_fix_json()
 
 
 #Bot
@@ -122,13 +121,48 @@ class aclient(discord.AutoShardedClient):
         self.guild_count = 0
 
 
+    class Presence():
+        @staticmethod
+        def get_activity() -> discord.Activity:
+            with open(ACTIVITY_FILE) as f:
+                data = json.load(f)
+                activity_type = data['activity_type']
+                activity_title = data['activity_title']
+                activity_url = data['activity_url']
+            if activity_type == 'Playing':
+                return discord.Game(name=activity_title)
+            elif activity_type == 'Streaming':
+                return discord.Streaming(name=activity_title, url=activity_url)
+            elif activity_type == 'Listening':
+                return discord.Activity(type=discord.ActivityType.listening, name=activity_title)
+            elif activity_type == 'Watching':
+                return discord.Activity(type=discord.ActivityType.watching, name=activity_title)
+            elif activity_type == 'Competing':
+                return discord.Activity(type=discord.ActivityType.competing, name=activity_title)
+
+        @staticmethod
+        def get_status() -> discord.Status:
+            with open(ACTIVITY_FILE) as f:
+                data = json.load(f)
+                status = data['status']
+            if status == 'online':
+                return discord.Status.online
+            elif status == 'idle':
+                return discord.Status.idle
+            elif status == 'dnd':
+                return discord.Status.dnd
+            elif status == 'invisible':
+                return discord.Status.invisible
+
+
     async def on_message(self, message):
         async def __wrong_selection():
             await message.channel.send('```'
                                        'Commands:\n'
-                                       'broadcast - Broadcast a message to all server owners\n'
                                        'help - Shows this message\n'
                                        'log - Get the log\n'
+                                       'activity - Set the activity of the bot\n'
+                                       'status - Set the status of the bot\n'
                                        'shutdown - Shutdown the bot\n'
                                        '```')
 
@@ -136,20 +170,24 @@ class aclient(discord.AutoShardedClient):
             args = message.content.split(' ')
             program_logger.debug(args)
             command, *args = args
-            if command == 'help':
-                await __wrong_selection()
-                return
-            elif command == 'log':
-                await Owner.log(message, args)
-                return
-            elif command == 'shutdown':
-                await Owner.shutdown(message)
-                return
-            elif command == 'broadcast':
-                await Owner.broadcast(' '.join(args))
-                return
-            else:
-                await __wrong_selection()
+            match command:
+                case 'help':
+                    await __wrong_selection()
+                    return
+                case 'log':
+                    await Owner.log(message, args)
+                    return
+                case 'activity':
+                    await Owner.activity(message, args)
+                    return
+                case 'status':
+                    await Owner.status(message, args)
+                    return
+                case 'shutdown':
+                    await Owner.shutdown(message)
+                    return
+                case _:
+                    await __wrong_selection()
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
         options = interaction.data.get("options")
@@ -190,6 +228,7 @@ class aclient(discord.AutoShardedClient):
                 sentry_sdk.capture_exception(error)
 
     async def on_ready(self):
+        await bot.change_presence(activity = self.Presence.get_activity(), status = self.Presence.get_status())
         if self.initialized:
             return
         if not self.synced:
@@ -395,13 +434,98 @@ class Owner():
                 os.remove(f'{BUFFER_FOLDER}log-lines.txt')
             return
 
+    async def activity(message, args):
+        async def __wrong_selection():
+            await message.channel.send('```'
+                                       'activity [playing/streaming/listening/watching/competing] [title] (url) - Set the activity of the bot\n'
+                                       '```')
+        def isURL(zeichenkette):
+            try:
+                ergebnis = urlparse(zeichenkette)
+                return all([ergebnis.scheme, ergebnis.netloc])
+            except:
+                return False
+
+        def remove_and_save(liste):
+            if liste and isURL(liste[-1]):
+                return liste.pop()
+            else:
+                return None
+
+        if args == []:
+            await __wrong_selection()
+            return
+        action = args[0].lower()
+        url = remove_and_save(args[1:])
+        title = ' '.join(args[1:])
+        program_logger.debug(title)
+        program_logger.debug(url)
+        with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
+            data = json.load(f)
+        if action == 'playing':
+            data['activity_type'] = 'Playing'
+            data['activity_title'] = title
+            data['activity_url'] = ''
+        elif action == 'streaming':
+            data['activity_type'] = 'Streaming'
+            data['activity_title'] = title
+            data['activity_url'] = url
+        elif action == 'listening':
+            data['activity_type'] = 'Listening'
+            data['activity_title'] = title
+            data['activity_url'] = ''
+        elif action == 'watching':
+            data['activity_type'] = 'Watching'
+            data['activity_title'] = title
+            data['activity_url'] = ''
+        elif action == 'competing':
+            data['activity_type'] = 'Competing'
+            data['activity_title'] = title
+            data['activity_url'] = ''
+        else:
+            await __wrong_selection()
+            return
+        with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
+            json.dump(data, f, indent=2)
+        await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
+        await message.channel.send(f'Activity set to {action} {title}{" " + url if url else ""}.')
+
+    async def status(message, args):
+        async def __wrong_selection():
+            await message.channel.send('```'
+                                       'status [online/idle/dnd/invisible] - Set the status of the bot\n'
+                                       '```')
+
+        if args == []:
+            await __wrong_selection()
+            return
+        action = args[0].lower()
+        with open(ACTIVITY_FILE, 'r', encoding='utf8') as f:
+            data = json.load(f)
+        if action == 'online':
+            data['status'] = 'online'
+        elif action == 'idle':
+            data['status'] = 'idle'
+        elif action == 'dnd':
+            data['status'] = 'dnd'
+        elif action == 'invisible':
+            data['status'] = 'invisible'
+        else:
+            await __wrong_selection()
+            return
+        with open(ACTIVITY_FILE, 'w', encoding='utf8') as f:
+            json.dump(data, f, indent=2)
+        await bot.change_presence(activity = bot.Presence.get_activity(), status = bot.Presence.get_status())
+        await message.channel.send(f'Status set to {action}.')
+
     async def shutdown(message):
         global shutdown
-        program_logger.info('Engine powering down...')
+        _message = 'Engine powering down...'
+        program_logger.info(_message)
         try:
-            await message.channel.send('Engine powering down...')
+            await message.channel.send(_message)
         except:
-            await owner.send('Engine powering down...')
+            await owner.send(_message)
         await bot.change_presence(status=discord.Status.invisible)
         shutdown = True
 
@@ -410,25 +534,6 @@ class Owner():
         await asyncio.gather(*tasks, return_exceptions=True)
 
         await bot.close()
-
-    async def broadcast(message):
-        already_send = []
-        success = 0
-        forbidden = 0
-        error = 0
-        for guild in bot.guilds:
-            guild_owner = await bot.fetch_user(guild.owner_id)
-            if guild_owner.id in already_send:
-                continue
-            try:
-                await guild_owner.send(f'Broadcast from the owner of the bot:\n{message}')
-                success += 1
-                already_send.append(guild_owner.id)
-            except discord.Forbidden:
-                forbidden += 1
-            except Exception as e:
-                error += 1
-        await owner.send(f'Broadcast finished.\nSuccess: {success}\nForbidden: {forbidden}\nError: {error}')
 
 
 ##Bot Commands----------------------------------------

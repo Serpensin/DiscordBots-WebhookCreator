@@ -1,10 +1,9 @@
-FROM python:3.12.4-alpine
+FROM python:3.12-alpine
 
 WORKDIR /app
 
 COPY CustomModules ./CustomModules
-COPY main.py .
-COPY __init__.py .
+COPY *.py .
 COPY requirements.txt .
 
 ENV TERM=xterm
@@ -13,7 +12,6 @@ ENV PYTHONUNBUFFERED=1
 ARG TARGETPLATFORM
 ARG BUILD_DATE
 ARG COMMIT
-ARG VERSION
 
 RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev linux-headers rust cargo g++ && \
     apk add curl && \
@@ -31,6 +29,6 @@ LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       commit=$COMMIT \
       description="Discord bot for creating Webhooks." \
       release=$BUILD_DATE \
-      version="1.9.1"
+      version="1.10.0"
 
 CMD ["python3", "main.py"]

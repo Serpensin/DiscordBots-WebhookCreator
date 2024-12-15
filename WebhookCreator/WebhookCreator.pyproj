@@ -33,7 +33,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".env.template" />
-    <Content Include=".env" />
     <Content Include="docker-compose.yml" />
     <Content Include="requirements.txt" />
   </ItemGroup>

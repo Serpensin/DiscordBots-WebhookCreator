@@ -7,12 +7,12 @@ services:
             - SUPPORT_SERVER=DISCORD-ID-SUPPORTSERVER
             - LOG_LEVEL=INFO
         restart: always
-        image: 'serpensin/discord_webhook_creator'
+        image: ghcr.io/serpensin/discordbots-webhookcreator:latest
         container_name: 'WebhookCreator'
         ports:
             - '5000:5000'
         volumes:
-            - data:/app/WH-Creator
+            - data:/app/WH-Creator/Logs
         healthcheck:
           test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
           interval: 30s

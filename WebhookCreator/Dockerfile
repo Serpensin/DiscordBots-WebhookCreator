@@ -15,9 +15,9 @@ ARG COMMIT
 
 RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev linux-headers rust cargo g++ && \
     apk add curl && \
-    python -m pip install --upgrade pip && \
-    pip install --upgrade setuptools && \
-    pip install -r requirements.txt && \
+    python -m pip install --root-user-action ignore  --upgrade pip && \
+    pip install --root-user-action ignore  --upgrade setuptools && \
+    pip install --root-user-action ignore  -r requirements.txt && \
     apk del .build-deps && \
     find /usr/local \
     \( -type d -a -name test -o -name tests \) \

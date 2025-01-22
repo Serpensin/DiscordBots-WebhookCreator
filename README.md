@@ -27,3 +27,23 @@ You can use the bot to create webhooks for your server, or for other servers. (I
       1. Make sure you have Docker installed. (https://docs.docker.com/get-docker/)
       2. Open a terminal.
       3. Run `docker run -d -e TOKEN=BOT_TOKEN -e owner_id=DISCORD_ID_OF_OWNER --name webhookcreator serpensin/discord_webhook_creator` to start the bot.
+
+#### Run the bot
+You only need to expose the port `-p 5000:5000`, if you want to use an external tool, to test, if the bot is running.
+In this case, you need to call the `/health` endpoint.
+```bash
+docker run -d \
+-e SUPPORT_SERVER=ID_OF_SUPPORTSERVER \
+-e TOKEN=BOT_TOKEN \
+-e OWNER_ID=DISCORD_ID_OF_OWNER \
+--name Hercules \
+--restart any \
+--health-cmd="curl -f http://localhost:5000/health || exit 1" \
+--health-interval=30s \
+--health-timeout=10s \
+--health-retries=3 \
+--health-start-period=40s \
+-p 5000:5000 \
+-v hercules_log:/app/Basis/Logs \
+ghcr.io/serpensin/discordbots-webhookcreator:latest
+```

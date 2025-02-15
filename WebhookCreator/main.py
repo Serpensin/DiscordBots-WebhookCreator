@@ -592,11 +592,18 @@ if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')
     @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
     async def support(interaction: discord.Interaction):
-        if str(interaction.guild.id) != SUPPORTID:
+        # If we're in a DM (guild is None), just provide the invite
+        if interaction.guild is None:
             await interaction.response.defer(ephemeral = True)
             await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
-        else:
+            return
+            
+        # If we're in a guild, check if it's the support server
+        if str(interaction.guild.id) == SUPPORTID:
             await interaction.response.send_message('You are already in our support server!', ephemeral = True)
+        else:
+            await interaction.response.defer(ephemeral = True)
+            await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
 #Ping
 @tree.command(name = 'ping', description = 'Test, if the bot is responding.')
 async def ping(interaction: discord.Interaction):

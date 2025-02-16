@@ -361,7 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/WebhookCreator/env
-/WebhookCreator/docker_build.bat
 /WebhookCreator/.env
-/WebhookCreator/WH-Creator/activity.json
+/WebhookCreator/WH-Creator
+/WH-Creator

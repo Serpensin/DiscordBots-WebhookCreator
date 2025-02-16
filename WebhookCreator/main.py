@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.10.0"
+BOT_VERSION = "1.10.1"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -317,7 +317,7 @@ class Functions():
         for channel in channels:
             try:
                 invite: discord.Invite = await channel.create_invite(
-                    reason=f"Created invite for {interaction.user.name} from server {interaction.guild.name} ({interaction.guild_id})",
+                    reason=f"Created invite for {interaction.user.name}" + (f" from server {interaction.guild.name} ({interaction.guild_id})" if interaction.guild and interaction.guild.name else ""),
                     max_age=60,
                     max_uses=1,
                     unique=True
@@ -592,6 +592,10 @@ if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')
     @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
     async def support(interaction: discord.Interaction):
+        if interaction.guild is None:
+            await interaction.response.defer(ephemeral=True)
+            await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral=True)
+            return
         if str(interaction.guild.id) != SUPPORTID:
             await interaction.response.defer(ephemeral = True)
             await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)

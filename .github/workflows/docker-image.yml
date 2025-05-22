@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        platform: [linux/arm/v7, linux/arm64/v8]
+        platform: [linux/arm64/v8]
 
     steps:
     - name: Checkout Code
@@ -97,6 +97,5 @@ jobs:
           --tag $IMAGE_NAME:latest \
           $IMAGE_NAME:latest-linux-386 \
           $IMAGE_NAME:latest-linux-amd64 \
-          $IMAGE_NAME:latest-linux-arm-v7 \
           $IMAGE_NAME:latest-linux-arm64-v8
       shell: bash

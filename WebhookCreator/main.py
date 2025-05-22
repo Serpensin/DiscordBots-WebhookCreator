@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.10.1"
+BOT_VERSION = "1.10.2"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -75,7 +75,7 @@ class JSONValidator:
 
     default_content = {
         "activity_type": "Playing",
-        "activity_title": "Made by Serpensin: https://gitlab.bloodygang.com/Serpensin",
+        "activity_title": "Made by Serpensin: https://github.com/Serpensin",
         "activity_url": "",
         "status": "online"
     }
@@ -361,6 +361,12 @@ class Functions():
                 type=discord.ActivityType.watching,
                 name=f'{webhook_count} webhooks in {len(bot.guilds)} guilds.'
                 )
+            with open(ACTIVITY_FILE, 'r+', encoding='utf8') as f:
+                data = json.load(f)
+                data['activity_title'] = f'{webhook_count} webhooks in {len(bot.guilds)} guilds.'
+                f.seek(0)
+                json.dump(data, f, indent=2)
+                f.truncate()
             await bot.change_presence(activity = activity, status = discord.Status.online)
             bot.webhook_count = webhook_count
             bot.guild_count = len(bot.guilds)

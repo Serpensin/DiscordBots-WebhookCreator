@@ -364,3 +364,4 @@ FodyWeavers.xsd
 /WebhookCreator/.env
 /WebhookCreator/WH-Creator
 /WH-Creator
+/WebhookCreator/env

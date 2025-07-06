@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.10.4"
+BOT_VERSION = "1.10.5"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -117,8 +117,6 @@ class aclient(discord.AutoShardedClient):
                         )
         self.synced = False
         self.initialized = False
-        self.webhook_count = 0
-        self.guild_count = 0
 
 
     class Presence():
@@ -346,36 +344,23 @@ class Functions():
 
     async def webhook_count_activity():
         async def function():
-            webhook_count = 0
-            for guild in bot.guilds:
-                try:
-                    webhooks = await guild.webhooks()
-                    for webhook in webhooks:
-                        if webhook.user == bot.user:
-                            webhook_count += 1
-                except (discord.Forbidden, discord.DiscordServerError, discord.NotFound):
-                    continue
-            if webhook_count == bot.webhook_count and len(bot.guilds) == bot.guild_count:
-                return
             activity = discord.Activity(
                 type=discord.ActivityType.watching,
-                name=f'{webhook_count} webhooks in {len(bot.guilds)} guilds.'
+                name=f'webhooks in {len(bot.guilds)} guilds'
                 )
             with open(ACTIVITY_FILE, 'r+', encoding='utf8') as f:
                 data = json.load(f)
-                data['activity_title'] = f'{webhook_count} webhooks in {len(bot.guilds)} guilds.'
+                data['activity_title'] = f'webhooks in {len(bot.guilds)} guilds'
                 f.seek(0)
                 json.dump(data, f, indent=2)
                 f.truncate()
             await bot.change_presence(activity = activity, status = discord.Status.online)
-            bot.webhook_count = webhook_count
-            bot.guild_count = len(bot.guilds)
-            program_logger.info(f'Updated activity: {webhook_count} webhooks in {len(bot.guilds)} guilds.')
+            program_logger.info(f'Updated activity: webhooks in {len(bot.guilds)} guilds')
 
         while not shutdown:
             await function()
             try:
-                await asyncio.sleep(60*60)
+                await asyncio.sleep(60*2)
             except asyncio.CancelledError:
                 pass
 

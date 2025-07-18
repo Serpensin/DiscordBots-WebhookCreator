@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.10.5"
+BOT_VERSION = "1.10.6"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -372,58 +372,61 @@ class Owner():
             await message.channel.send('```'
                                        'log [current/folder/lines] (Replace lines with a positive number, if you only want lines.) - Get the log\n'
                                        '```')
-        if args == []:
+        if not args:
             await __wrong_selection()
             return
-        if args[0] == 'current':
+
+        command = args[0]
+        if command == 'current':
+            log_file_path = f'{LOG_FOLDER}{BOT_NAME}.log'
             try:
-                await message.channel.send(file=discord.File(f'{LOG_FOLDER}{BOT_NAME}.log'))
+                await message.channel.send(file=discord.File(log_file_path))
             except discord.HTTPException as err:
                 if err.status == 413:
-                    with ZipFile(f'{BUFFER_FOLDER}Logs.zip', mode='w', compression=ZIP_DEFLATED, compresslevel=9, allowZip64=True) as f:
-                        f.write(f'{LOG_FOLDER}{BOT_NAME}.log')
+                    zip_path = f'{BUFFER_FOLDER}Logs.zip'
+                    with ZipFile(zip_path, mode='w', compression=ZIP_DEFLATED, compresslevel=9, allowZip64=True) as zip_file:
+                        zip_file.write(log_file_path)
                     try:
-                        await message.channel.send(file=discord.File(f'{BUFFER_FOLDER}Logs.zip'))
+                        await message.channel.send(file=discord.File(zip_path))
                     except discord.HTTPException as err:
                         if err.status == 413:
                             await message.channel.send("The log is too big to be sent directly.\nYou have to look at the log in your server (VPS).")
-                    os.remove(f'{BUFFER_FOLDER}Logs.zip')
-                    return
-        elif args[0] == 'folder':
-            if os.path.exists(f'{BUFFER_FOLDER}Logs.zip'):
-                os.remove(f'{BUFFER_FOLDER}Logs.zip')
-            with ZipFile(f'{BUFFER_FOLDER}Logs.zip', mode='w', compression=ZIP_DEFLATED, compresslevel=9, allowZip64=True) as f:
+                    os.remove(zip_path)
+            return
+
+        if command == 'folder':
+            zip_path = f'{BUFFER_FOLDER}Logs.zip'
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            with ZipFile(zip_path, mode='w', compression=ZIP_DEFLATED, compresslevel=9, allowZip64=True) as zip_file:
                 for file in os.listdir(LOG_FOLDER):
-                    if file.endswith(".zip"):
-                        continue
-                    f.write(f'{LOG_FOLDER}{file}')
+                    if not file.endswith(".zip"):
+                        zip_file.write(f'{LOG_FOLDER}{file}')
             try:
-                await message.channel.send(file=discord.File(f'{BUFFER_FOLDER}Logs.zip'))
+                await message.channel.send(file=discord.File(zip_path))
             except discord.HTTPException as err:
                 if err.status == 413:
                     await message.channel.send("The folder is too big to be sent directly.\nPlease get the current file or the last X lines.")
-            os.remove(f'{BUFFER_FOLDER}Logs.zip')
+            os.remove(zip_path)
             return
-        else:
-            try:
-                if int(args[0]) < 1:
-                    await __wrong_selection()
-                    return
-                else:
-                    lines = int(args[0])
-            except ValueError:
+
+        try:
+            lines = int(command)
+            if lines < 1:
                 await __wrong_selection()
                 return
-            with open(f'{LOG_FOLDER}{BOT_NAME}.log', 'r', encoding='utf8') as f:
-                with open(f'{BUFFER_FOLDER}log-lines.txt', 'w', encoding='utf8') as f2:
-                    count = 0
-                    for line in (f.readlines()[-lines:]):
-                        f2.write(line)
-                        count += 1
-            await message.channel.send(content=f'Here are the last {count} lines of the current logfile:', file=discord.File(f'{BUFFER_FOLDER}log-lines.txt'))
-            if os.path.exists(f'{BUFFER_FOLDER}log-lines.txt'):
-                os.remove(f'{BUFFER_FOLDER}log-lines.txt')
+        except ValueError:
+            await __wrong_selection()
             return
+
+        log_file_path = f'{LOG_FOLDER}{BOT_NAME}.log'
+        buffer_file_path = f'{BUFFER_FOLDER}log-lines.txt'
+        with open(log_file_path, 'r', encoding='utf8') as log_file:
+            log_lines = log_file.readlines()[-lines:]
+        with open(buffer_file_path, 'w', encoding='utf8') as buffer_file:
+            buffer_file.writelines(log_lines)
+        await message.channel.send(content=f'Here are the last {len(log_lines)} lines of the current logfile:', file=discord.File(buffer_file_path))
+        os.remove(buffer_file_path)
 
     async def activity(message, args):
         async def __wrong_selection():

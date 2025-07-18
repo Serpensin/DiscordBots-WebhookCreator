@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.10.6"
+BOT_VERSION = "1.10.7"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -360,7 +360,7 @@ class Functions():
         while not shutdown:
             await function()
             try:
-                await asyncio.sleep(60*2)
+                await asyncio.sleep(60*30)
             except asyncio.CancelledError:
                 pass
 

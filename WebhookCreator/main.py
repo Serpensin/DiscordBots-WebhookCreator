@@ -28,7 +28,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.10.7"
+BOT_VERSION = "1.10.8"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -540,7 +540,7 @@ async def botinfo(interaction: discord.Interaction):
     member_count = sum(guild.member_count for guild in bot.guilds)
 
     embed = discord.Embed(
-        title=f"Informationen about {bot.user.name}",
+        title=f"Information about {bot.user.name}",
         color=discord.Color.blue()
     )
     embed.set_thumbnail(url=bot.user.avatar.url if bot.user.avatar else '')

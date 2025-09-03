@@ -13,7 +13,7 @@ ARG TARGETPLATFORM
 ARG BUILD_DATE
 ARG COMMIT
 
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev linux-headers rust cargo g++ && \
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev linux-headers rust cargo g++ zlib-dev && \
     apk add curl && \
     python -m pip install --root-user-action ignore  --upgrade pip && \
     pip install --root-user-action ignore  --upgrade setuptools && \
@@ -28,7 +28,7 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev l
 LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       description="Discord bot for managing Webhooks." \
       release=$BUILD_DATE \
-      version="1.11.0" \
+      version="1.11.1" \
       url="https://github.com/Serpensin/DiscordBots-WebhookCreator"
 
 CMD ["python3", "main.py"]

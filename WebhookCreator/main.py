@@ -5,6 +5,7 @@ import aiohttp
 import asyncio
 import datetime
 import discord
+import io
 import json
 import jsonschema
 import os
@@ -16,6 +17,7 @@ import sys
 from aiohttp import web
 from CustomModules import log_handler
 from dotenv import load_dotenv
+from PIL import Image
 from urllib.parse import urlparse
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -28,7 +30,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.10.8"
+BOT_VERSION = "1.11.0"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -364,6 +366,38 @@ class Functions():
             except asyncio.CancelledError:
                 pass
 
+    async def process_avatar_file(attachment: discord.Attachment) -> bytes:
+        ALLOWED_FORMATS = ("jpg", "jpeg", "png", "gif", "webp", "avif")
+
+        MIN_SIZE = 128
+        ext = attachment.filename.split(".")[-1].lower()
+        if ext not in ALLOWED_FORMATS:
+            raise ValueError(f"Invalid file format. Allowed: {', '.join(ALLOWED_FORMATS)}")
+
+        file_bytes = await attachment.read()
+
+        try:
+            img = Image.open(io.BytesIO(file_bytes))
+            img.verify()
+        except Exception:
+            raise ValueError("The uploaded file is not a valid image.")
+
+        img = Image.open(io.BytesIO(file_bytes)).convert("RGBA")
+
+        width, height = img.size
+        min_dim = min(width, height)
+        left = (width - min_dim) // 2
+        top = (height - min_dim) // 2
+        img = img.crop((left, top, left + min_dim, top + min_dim))
+
+        if min_dim < MIN_SIZE:
+            img = img.resize((MIN_SIZE, MIN_SIZE), Image.Resampling.LANCZOS)
+
+        output = io.BytesIO()
+        img.save(output, format="PNG")
+        output.seek(0)
+        return output.read()
+
 
 ##Owner Commands
 class Owner():
@@ -531,7 +565,6 @@ class Owner():
 
 
 ##Bot Commands----------------------------------------
-#Bot Information
 @tree.command(name = 'botinfo', description = 'Get information about the bot.')
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
 async def botinfo(interaction: discord.Interaction):
@@ -581,7 +614,7 @@ async def botinfo(interaction: discord.Interaction):
         embed.add_field(name="RAM", value=f"{ram_real} MB", inline=True)
 
     await interaction.edit_original_response(embed=embed)
-#Support Invite
+
 if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')
     @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
@@ -595,40 +628,260 @@ if support_available:
             await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
         else:
             await interaction.response.send_message('You are already in our support server!', ephemeral = True)
-#Ping
+
 @tree.command(name = 'ping', description = 'Test, if the bot is responding.')
 async def ping(interaction: discord.Interaction):
     before = time.monotonic()
     await interaction.response.send_message('Pong!')
     ping = (time.monotonic() - before) * 1000
     await interaction.edit_original_response(content=f'Pong! `{int(ping)}ms`')
+
+
 ##Main Commands----------------------------------------
-#Create Webhook
-@tree.command(name = 'create_webhook', description = 'Create a webhook.')
+@tree.command(name='create_webhook', description='Create a webhook.')
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.channel.id))
-@discord.app_commands.describe(name='Name of the webhook.', channel='Channel the webhook should be created in.')
-async def create_webhook(interaction: discord.Interaction, name: str, channel: discord.TextChannel):
+@discord.app_commands.describe(
+    name='Name of the webhook.',
+    channel='Channel the webhook should be created in.',
+    avatar_file='Upload an optional avatar image (Discord-supported formats only).'
+)
+async def create_webhook(
+    interaction: discord.Interaction,
+    name: str,
+    channel: discord.TextChannel,
+    avatar_file: discord.Attachment | None = None
+):
     if name.lower() in ['discord', 'wumpus']:
         await interaction.response.send_message('Please choose a different name for your webhook.', ephemeral=True)
         return
+
     if not channel.permissions_for(interaction.user).manage_webhooks:
-        await interaction.response.send_message(f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
+        await interaction.response.send_message(
+            f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!',
+            ephemeral=True
+        )
         return
     if not channel.permissions_for(interaction.guild.me).manage_webhooks:
-        await interaction.response.send_message(f'I need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
+        await interaction.response.send_message(
+            f'I need the permission "Manage Webhooks" for {channel.mention} to use this command!',
+            ephemeral=True
+        )
         return
-    if len(name) < 1 or len(name) > 80 or name.strip() == '':
-        name = 'WebhookCreator'
+
+    name = name if name and 0 < len(name.strip()) < 80 else "WebhookCreator"
+
+    avatar_bytes = None
+    if avatar_file:
+        try:
+            avatar_bytes = await Functions.process_avatar_file(avatar_file)
+        except Exception as e:
+            await interaction.response.send_message(f"Failed to process avatar: {e}", ephemeral=True)
+            return
+
     try:
-        webhook = await channel.create_webhook(name=name, reason=f'Created by {interaction.user.name}#{interaction.user.discriminator} ({interaction.user.id})')
-        await interaction.response.send_message(f'Webhook for channel {channel.mention}:\n{webhook.url}', ephemeral=True)
+        webhook = await channel.create_webhook(
+            name=name,
+            avatar=avatar_bytes,
+            reason=f'Created by {interaction.user.name} ({interaction.user.id})'
+        )
+        await interaction.response.send_message(
+            f'Webhook for channel {channel.mention}:\n{webhook.url}\n\n'
+            '!!!Make sure to save it, since you WILL NOT be able to see it again!!!',
+            ephemeral=True
+        )
     except discord.errors.HTTPException as e:
         if e.code == 30007:
-            await interaction.response.send_message(f'You reached the maximum amount of webhooks in this guild.\nThis is a limit, imposed by discord, which I can\'t change.', ephemeral=True)
+            await interaction.response.send_message(
+                'You reached the maximum amount of webhooks in this guild.\n'
+                'This is a limit, imposed by Discord, which I can\'t change.',
+                ephemeral=True
+            )
         else:
-            _message = f'Error while creating webhook: {e}'    
+            _message = f'Error while creating webhook: {e}'
             await interaction.response.send_message(_message, ephemeral=True)
             program_logger.error(_message)
+
+@tree.command(name='delete_webhook', description='Delete a wbhook from a server.')
+@discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
+@discord.app_commands.describe(webhook='Select the webhook you want to delete. -> Name: Creator (Channel)')
+async def delete_webhook(interaction: discord.Interaction, webhook: str):
+    await interaction.response.defer(ephemeral=True)
+    if not interaction.guild:
+        await interaction.followup.send('This command can only be used in a server.', ephemeral=True)
+        return
+    try:
+        webhook_id = int(webhook.split('|')[0])
+    except Exception:
+        await interaction.followup.send('Invalid selection.', ephemeral=True)
+        return
+
+    webhooks = await interaction.guild.webhooks()
+    for wh in webhooks:
+        if wh.id == webhook_id:
+            break
+    else:
+        await interaction.followup.send('Could not find the selected webhook in this server.', ephemeral=True)
+        return
+
+    channel = wh.channel
+    if channel is None:
+        await interaction.followup.send('The channel of this webhook no longer exists.', ephemeral=True)
+        return
+    if not channel.permissions_for(interaction.user).manage_webhooks:
+        await interaction.followup.send(f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!', ephemeral=True)
+        return
+    if not channel.permissions_for(interaction.guild.me).manage_webhooks:
+        await interaction.followup.send("I don't have permission to delete webhooks in that channel.", ephemeral=True)
+        return
+    try:
+        await wh.delete(reason=f'Deleted from {interaction.user} ({interaction.user.id})')
+        await interaction.followup.send(f'Webhook **{wh.name}** in {channel.mention} got deleted.', ephemeral=True)
+    except Exception as e:
+        program_logger.error(f'Error while deleting webhook: {e}')
+        await interaction.followup.send(f'Error during deletion: {e}', ephemeral=True)
+
+@tree.command(name="edit_webhook", description="Edit a webhook's name, channel, or avatar.")
+@discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
+@discord.app_commands.describe(
+    webhook="Select the webhook you want to edit.",
+    new_name="New name for the webhook (optional).",
+    new_channel="New channel for the webhook (optional).",
+    avatar_file="Upload a new avatar image (optional, only Discord-supported formats)."
+)
+async def edit_webhook(
+    interaction: discord.Interaction,
+    webhook: str,
+    new_name: str | None = None,
+    new_channel: discord.TextChannel | None = None,
+    avatar_file: discord.Attachment | None = None
+):
+    await interaction.response.defer(ephemeral=True)
+
+    if not interaction.guild:
+        await interaction.followup.send("This command can only be used in a server.", ephemeral=True)
+        return
+
+    try:
+        webhook_id = int(webhook.split("|")[0])
+    except Exception:
+        await interaction.followup.send("Invalid selection.", ephemeral=True)
+        return
+
+    webhooks = await interaction.guild.webhooks()
+    for wh in webhooks:
+        if wh.id == webhook_id:
+            break
+    else:
+        await interaction.followup.send("Webhook not found.", ephemeral=True)
+        return
+
+    src_channel = wh.channel
+    tgt_channel = new_channel or wh.channel
+    if not src_channel or not tgt_channel:
+        await interaction.followup.send("Source or target channel no longer exists.", ephemeral=True)
+        return
+
+    if not (src_channel.permissions_for(interaction.user).manage_webhooks and
+            tgt_channel.permissions_for(interaction.user).manage_webhooks):
+        await interaction.followup.send(
+            "You don't have Manage Webhooks permission in the source or target channel.",
+            ephemeral=True
+        )
+        return
+
+    bot_member = interaction.guild.me
+    if not (src_channel.permissions_for(bot_member).manage_webhooks and
+            tgt_channel.permissions_for(bot_member).manage_webhooks):
+        await interaction.followup.send(
+            "I don't have Manage Webhooks permission in the source or target channel.",
+            ephemeral=True
+        )
+        return
+
+    if avatar_file:
+        avatar_bytes = None
+        try:
+            avatar_bytes = await Functions.process_avatar_file(avatar_file)
+        except Exception as e:
+            program_logger.error(f"Error processing avatar file: {e}")
+            await interaction.followup.send(f"Failed to process avatar: {e}", ephemeral=True)
+            return
+
+    try:
+        await wh.edit(
+            name=new_name if new_name and 0 < len(new_name) < 80 else wh.name,
+            channel=tgt_channel,
+            avatar=avatar_bytes if avatar_file else wh.avatar
+        )
+        await interaction.followup.send(f"Webhook **{wh.name}** updated successfully.", ephemeral=True)
+    except Exception as e:
+        program_logger.error(f"Error while editing webhook: {e}")
+        await interaction.followup.send(f"Failed to edit webhook: {e}", ephemeral=True)
+
+@tree.command(name="list_webhooks", description="List all webhooks of this server with details.")
+@discord.app_commands.checks.has_permissions(administrator=True)
+async def list_webhooks(interaction: discord.Interaction):
+    if not interaction.guild:
+        await interaction.response.send_message("This command can only be used in a server.", ephemeral=True)
+        return
+
+    webhooks = await interaction.guild.webhooks()
+    valid_webhooks = [wh for wh in webhooks if wh.token]
+
+    if not valid_webhooks:
+        await interaction.response.send_message("No usable webhooks found in this server.", ephemeral=True)
+        return
+
+    lines = []
+    for wh in valid_webhooks:
+        creator = wh.user.mention if wh.user else "N/A"
+        channel = wh.channel.mention if wh.channel else "N/A"
+        created = discord.utils.format_dt(wh.created_at, style="R")
+
+        lines.append(
+            f"**{wh.name}** (ID: `{wh.id}`)\n"
+            f"• Channel: {channel}\n"
+            f"• Creator: {creator}\n"
+            f"• Created: {created}\n"
+            f"• [Webhook URL]({wh.url})\n"
+            f"⸺⸺⸺⸺⸺⸺⸺⸺⸺⸺⸺⸺"
+        )
+
+    message_chunks = []
+    current = ""
+    for line in lines:
+        if len(current) + len(line) > 1900:
+            message_chunks.append(current)
+            current = ""
+        current += line + "\n"
+    if current:
+        message_chunks.append(current)
+
+    await interaction.response.send_message(message_chunks[0], ephemeral=True)
+    for chunk in message_chunks[1:]:
+        await interaction.followup.send(chunk, ephemeral=True)
+
+
+# Autocomplete for Webhook-Parameter
+@delete_webhook.autocomplete('webhook')
+@edit_webhook.autocomplete('webhook')
+async def webhook_autocomplete(interaction: discord.Interaction, current: str):
+    if not interaction.guild:
+        return []
+    webhooks = await interaction.guild.webhooks()
+    choices = []
+    for wh in webhooks:
+        if not wh.token:
+            continue
+        owner = wh.user.name if wh.user else 'N/A'
+        channel_name = wh.channel.name if wh.channel else 'N/A'
+        label = f"{wh.name}: {owner} ({channel_name})"
+        value = f"{wh.id}|{wh.name}"
+        if current.lower() in label.lower():
+            choices.append(discord.app_commands.Choice(name=label, value=value))
+        if len(choices) >= 25:
+            break
+    return choices
 
 
 

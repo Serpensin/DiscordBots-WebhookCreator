@@ -6,12 +6,13 @@ attrs
 certifi
 charset-normalizer
 colorama
-discord.py
+discord.py>=2.0.0
 frozenlist
 idna
 jsonschema
 jsonschema-specifications
 multidict
+pillow
 propcache
 psutil
 pyrsistent
@@ -19,5 +20,6 @@ python-dotenv
 referencing
 rpds-py
 sentry-sdk
+typing_extensions
 urllib3
 yarl

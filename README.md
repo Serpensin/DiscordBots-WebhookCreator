@@ -1,6 +1,6 @@
 # WebhookCreator DiscordBot [![Discord Bot Invite](https://img.shields.io/badge/Invite-blue)](https://discord.com/oauth2/authorize?client_id=1251220473790861454)[![Discord Bots](https://top.gg/api/widget/servers/1251220473790861454.svg)](https://top.gg/bot/1251220473790861454)
 
-With this bot you can create application webhooks that can be used to send messages with buttons.
+With this bot you can create/edit/delete application webhooks that can be used to send messages with buttons.
 Keep in mind that the webhooks get deleted, if you remove the bot from your server. (But it doesn't have to be online.)
 
 You can use the bot to create webhooks for your server, or for other servers. (If you have the permission to create webhooks in that server.)

@@ -1,4 +1,5 @@
 #Import
+from dis import disco
 import time
 startupTime_start = time.time()
 import aiohttp
@@ -30,7 +31,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.11.11"
+BOT_VERSION = "1.11.12"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -619,26 +620,26 @@ if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')
     @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
     async def support(interaction: discord.Interaction):
-        if interaction.guild is None:
-            await interaction.response.defer(ephemeral=True)
-            await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral=True)
-            return
+        await interaction.response.defer(ephemeral = True)
+
         if str(interaction.guild.id) != SUPPORTID:
-            await interaction.response.defer(ephemeral = True)
             await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
         else:
-            await interaction.response.send_message('You are already in our support server!', ephemeral = True)
+            await interaction.followup.send('You are already in our support server!', ephemeral = True)
 
 @tree.command(name = 'ping', description = 'Test, if the bot is responding.')
 async def ping(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True)
+
     before = time.monotonic()
-    await interaction.response.send_message('Pong!')
+    await interaction.followup.send('Pong!')
     ping = (time.monotonic() - before) * 1000
-    await interaction.edit_original_response(content=f'Pong! `{int(ping)}ms`')
+    await interaction.edit_original_response(content=f'Pong! \nCommand execution time: `{Functions.safe_int(ping)}ms`\nPing to gateway: `{Functions.safe_int(bot.latency * 1000 if interaction.guild is None else bot.shards.get(interaction.guild.shard_id).latency * 1000)}ms`')
 
 
 ##Main Commands----------------------------------------
 @tree.command(name='create_webhook', description='Create a webhook.')
+@discord.app_commands.guild_only()
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.channel.id))
 @discord.app_commands.describe(
     name='Name of the webhook.',
@@ -651,18 +652,20 @@ async def create_webhook(
     channel: discord.TextChannel,
     avatar_file: discord.Attachment | None = None
 ):
+    await interaction.response.defer(ephemeral=True)
+
     if name.lower() in ['discord', 'wumpus']:
-        await interaction.response.send_message('Please choose a different name for your webhook.', ephemeral=True)
+        await interaction.followup.send('Please choose a different name for your webhook.', ephemeral=True)
         return
 
     if not channel.permissions_for(interaction.user).manage_webhooks:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f'You need the permission "Manage Webhooks" for {channel.mention} to use this command!',
             ephemeral=True
         )
         return
     if not channel.permissions_for(interaction.guild.me).manage_webhooks:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f'I need the permission "Manage Webhooks" for {channel.mention} to use this command!',
             ephemeral=True
         )
@@ -675,7 +678,7 @@ async def create_webhook(
         try:
             avatar_bytes = await Functions.process_avatar_file(avatar_file)
         except Exception as e:
-            await interaction.response.send_message(f"Failed to process avatar: {e}", ephemeral=True)
+            await interaction.followup.send(f"Failed to process avatar: {e}", ephemeral=True)
             return
 
     try:
@@ -684,28 +687,29 @@ async def create_webhook(
             avatar=avatar_bytes,
             reason=f'Created by {interaction.user.name} ({interaction.user.id})'
         )
-        await interaction.response.send_message(
-            f'Webhook for channel {channel.mention}:\n{webhook.url}\n\n'
-            '!!!Make sure to save it, since you WILL NOT be able to see it again!!!',
+        await interaction.followup.send(
+            f'Webhook for channel {channel.mention}:\n{webhook.url}',
             ephemeral=True
         )
     except discord.errors.HTTPException as e:
         if e.code == 30007:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 'You reached the maximum amount of webhooks in this guild.\n'
                 'This is a limit, imposed by Discord, which I can\'t change.',
                 ephemeral=True
             )
         else:
             _message = f'Error while creating webhook: {e}'
-            await interaction.response.send_message(_message, ephemeral=True)
+            await interaction.followup.send(_message, ephemeral=True)
             program_logger.error(_message)
 
 @tree.command(name='delete_webhook', description='Delete a wbhook from a server.')
+@discord.app_commands.guild_only()
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
 @discord.app_commands.describe(webhook='Select the webhook you want to delete. -> Name: Creator (Channel)')
 async def delete_webhook(interaction: discord.Interaction, webhook: str):
     await interaction.response.defer(ephemeral=True)
+
     if not interaction.guild:
         await interaction.followup.send('This command can only be used in a server.', ephemeral=True)
         return
@@ -741,6 +745,7 @@ async def delete_webhook(interaction: discord.Interaction, webhook: str):
         await interaction.followup.send(f'Error during deletion: {e}', ephemeral=True)
 
 @tree.command(name="edit_webhook", description="Edit a webhook's name, channel, or avatar.")
+@discord.app_commands.guild_only()
 @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
 @discord.app_commands.describe(
     webhook="Select the webhook you want to edit.",
@@ -819,17 +824,16 @@ async def edit_webhook(
         await interaction.followup.send(f"Failed to edit webhook: {e}", ephemeral=True)
 
 @tree.command(name="list_webhooks", description="List all webhooks of this server with details.")
+@discord.app_commands.guild_only()
 @discord.app_commands.checks.has_permissions(administrator=True)
 async def list_webhooks(interaction: discord.Interaction):
-    if not interaction.guild:
-        await interaction.response.send_message("This command can only be used in a server.", ephemeral=True)
-        return
+    await interaction.response.defer(ephemeral=True)
 
     webhooks = await interaction.guild.webhooks()
     valid_webhooks = [wh for wh in webhooks if wh.token]
 
     if not valid_webhooks:
-        await interaction.response.send_message("No usable webhooks found in this server.", ephemeral=True)
+        await interaction.followup.send("No usable webhooks found in this server.", ephemeral=True)
         return
 
     lines = []
@@ -857,7 +861,7 @@ async def list_webhooks(interaction: discord.Interaction):
     if current:
         message_chunks.append(current)
 
-    await interaction.response.send_message(message_chunks[0], ephemeral=True)
+    await interaction.followup.send(message_chunks[0], ephemeral=True)
     for chunk in message_chunks[1:]:
         await interaction.followup.send(chunk, ephemeral=True)
 

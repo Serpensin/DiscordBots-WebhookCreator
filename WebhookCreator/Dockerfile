@@ -2,7 +2,6 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
-COPY CustomModules ./CustomModules
 COPY *.py .
 COPY requirements.txt .
 

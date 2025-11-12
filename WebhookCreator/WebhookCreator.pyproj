@@ -26,7 +26,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CustomModules\log_handler.py" />
     <Compile Include="Dockerfile" />
     <Compile Include="main.py" />
     <Compile Include="__init__.py" />

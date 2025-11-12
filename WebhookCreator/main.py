@@ -31,7 +31,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.11.14"
+BOT_VERSION = "1.11.15"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -317,12 +317,18 @@ class Functions():
         channels: discord.TextChannel = guild.text_channels
         for channel in channels:
             try:
+                if interaction.guild is not None:
+                    reason=f"Created invite for {interaction.user.name} from server {interaction.guild.name} ({interaction.guild_id})"
+                else:
+                    reason=f"Created invite for {interaction.user.name} (DM)"
+
                 invite: discord.Invite = await channel.create_invite(
-                    reason=f"Created invite for {interaction.user.name}" + (f" from server {interaction.guild.name} ({interaction.guild_id})" if interaction.guild and interaction.guild.name else ""),
+                    reason=reason,
                     max_age=60,
                     max_uses=1,
                     unique=True
                 )
+
                 return invite.url
             except discord.Forbidden:
                 continue

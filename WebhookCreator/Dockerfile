@@ -27,7 +27,7 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev python3-dev libc-dev l
 LABEL maintainer="Discord: pika.pika.no.mi (970119359840284743)" \
       description="Discord bot for managing Webhooks." \
       release=$BUILD_DATE \
-      version="1.11.14" \
+      version="1.11.15" \
       url="https://github.com/Serpensin/DiscordBots-WebhookCreator"
 
 CMD ["python3", "main.py"]

@@ -31,7 +31,7 @@ BOT_NAME = 'WebhookCreator'
 if not os.path.exists(APP_FOLDER_NAME):
     os.makedirs(APP_FOLDER_NAME)
 ACTIVITY_FILE = os.path.join(APP_FOLDER_NAME, 'activity.json')
-BOT_VERSION = "1.11.13"
+BOT_VERSION = "1.11.14"
 TOKEN = os.getenv('TOKEN')
 OWNERID = os.getenv('OWNER_ID')
 SUPPORTID = os.getenv('SUPPORT_SERVER')
@@ -620,12 +620,18 @@ if support_available:
     @tree.command(name = 'support', description = 'Get invite to our support server.')
     @discord.app_commands.checks.cooldown(1, 60, key=lambda i: (i.user.id))
     async def support(interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral = True)
+        await interaction.response.defer(thinking=True)
 
+        if not SUPPORTID:
+            await interaction.followup.send('There is no support server setup!', ephemeral=True)
+            return
+        if interaction.guild is None:
+            await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral=True)
+            return
         if str(interaction.guild.id) != SUPPORTID:
-            await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral = True)
+            await interaction.followup.send(await Functions.create_support_invite(interaction), ephemeral=True)
         else:
-            await interaction.followup.send('You are already in our support server!', ephemeral = True)
+            await interaction.followup.send('You are already in our support server!', ephemeral=True)
 
 @tree.command(name = 'ping', description = 'Test, if the bot is responding.')
 async def ping(interaction: discord.Interaction):
